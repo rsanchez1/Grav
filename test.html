@@ -1,1 +1,98 @@
-TESTING
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test</title>
+    <script type='text/javascript'>
+        Array.prototype.rotatex = function(angle) {
+            return [this[0], this[1]*Math.cos(angle) - this[2]*Math.sin(angle), this[1]*Math.sin(angle) + this[2]*Math.cos(angle)];
+        }
+        Array.prototype.rotatey = function(angle) {
+            return [this[0]*Math.cos(angle) - this[2]*Math.sin(angle), this[1], this[0]*Math.sin(angle) + this[2]*Math.cos(angle)];
+        }
+        Array.prototype.rotatez = function(angle) {
+            return [this[0]*Math.cos(angle) - this[1]*Math.sin(angle), this[0]*Math.sin(angle) + this[1]*Math.cos(angle), this[2]];
+        }
+        window.onload = function() {
+            primary = document.getElementById('primary').getContext('2d');
+            secondary = document.getElementById('secondary').getContext('2d');
+            /*
+            primary.setTransform(1, 0, 0, 1, 0, 0);
+            primary.scale(1/10000, 1/10000);
+            */
+            primary.fillStyle = '#000';
+            primary.fillRect(0, 0, 1300/* * 1000 */, 600/* * 1000 */);
+            /*
+            for (var i = 100; i--;) {
+                primary.setTransform(1, 0, 0, 1, 0, 0);
+                primary.scale(1/(10000 + i * 10), 1/(10000 + i * 10));
+                secondary.setTransform(1, 0, 0, 1, 0, 0);
+                secondary.scale(1/(10000 + i * 10), 1/(10000 + i * 10));
+                primary.beginPath();
+                primary.arc(i * 30000, i * 70000, i * 100000, 0, Math.PI * 2, 1);
+                primary.closePath();
+                primary.fillStyle = 'rgb(' + (127 + randInt(127)) + ',' + (127 + randInt(127)) + ',' + (127 + randInt(127)) + ')';
+                primary.fill();
+                secondary.drawImage(primary.canvas, 0, 0, 1300 * (10000 + i * 10), 600 * (10000 + i * 10));
+                primary.drawImage(secondary.canvas, 0, 0, 1300 * (10000 + i * 10), 600 * (10000 + i * 10));
+            }
+            */
+            xvect = [100,0,0];
+            yvect = [0,100,0];
+            zvect = [0,0,100];
+            xdeg = 0;
+            ydeg = 0;
+            zdeg = 0;
+            drawLines(primary);
+            var gradient1 = primary.createLinearGradient(100,100,200,100);
+            gradient1.addColorStop(0, '#ff0');
+            gradient1.addColorStop(0.5, '#000');
+            var gradient2 = primary.createLinearGradient(0,0,100,0);
+            gradient2.addColorStop(0, '#f0f');
+            gradient2.addColorStop(1, '#000');
+            drawLine(100,100,200,100,10,gradient1,primary);
+            drawLine(200,200,300,200,10,gradient2,primary);
+            document.onkeypress = pageEvents;
+        };
+        function pageEvents(ev) {
+            var ekey = ev.which;
+            if (ekey == 97) {
+                xdeg += 1/36;
+            }
+            if (ekey == 100) {
+                ydeg += 1/36;
+            }
+            if (ekey == 115) {
+                zdeg += 1/36;
+            }
+            drawLines(primary);
+        }
+        function drawLines(primary) {
+            var x2vect = xvect.rotatex(xdeg).rotatey(ydeg).rotatez(zdeg);
+            var y2vect = yvect.rotatex(xdeg).rotatey(ydeg).rotatez(zdeg);
+            var z2vect = zvect.rotatex(xdeg).rotatey(ydeg).rotatez(zdeg);
+            primary.fillStyle = '#000';
+            primary.fillRect(0,0,1300,600);
+            drawLine(x2vect[0] + 400, x2vect[1] + 400, 400, 400, 10, '#f00', primary);
+            drawLine(y2vect[0] + 400, y2vect[1] + 400, 400, 400, 10, '#0f0', primary);
+            drawLine(z2vect[0] + 400, z2vect[1] + 400, 400, 400, 10, '#00f', primary);
+        }
+        function drawLine(x, y, oldx, oldy, radius, color, paper) {
+            paper.lineWidth = .2*radius;
+            paper.lineCap = 'round';
+            paper.beginPath();
+            paper.moveTo(oldx, oldy);
+            paper.lineTo(x, y);
+            paper.strokeStyle = color;
+            paper.fillStyle = color;
+            paper.stroke();
+        }
+        function randInt(limit) {
+            return Math.floor(Math.random() * limit);
+        }
+    </script>
+</head>
+<body>
+<canvas id='primary' width='1300' height='600'></canvas>
+<canvas id='secondary' width='1300' height='600'></canvas>
+</body>
+</html>
