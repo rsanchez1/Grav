@@ -206,6 +206,10 @@ function changeBody(ev) {
     this.blur();
 }
 
+function getUrl() {
+    window.location.hash = JSON.stringify(bodies);
+}
+
 function handleScroll(e) {
     e = e ? e : window.event;
     var wheelData = e.detail ? e.detail * -1 : e.wheelDelta / 40;
@@ -470,7 +474,7 @@ function addBody(x, y, newMass, randomOrientation) {
     if (typeof(randomOrientation) != 'undefined' && randomOrientation == true) {
         velocity = velocity.rotate(2*Math.PI*Math.random());
     }
-    var color = (127 + randInt(127)) + ',' + (127 + randInt(127)) + ',' + (127 + randInt(127));
+    var color = 'rgb(' + (127 + randInt(127)) + ',' + (127 + randInt(127)) + ',' + (127 + randInt(127)) + ')';
     bodies[bodies.length] = {mass: newMass, velocity: velocity, radius: newRadius, position: newPosition, color:color};
     if (isPaused) {
         drawBody(x, y, newRadius, color, paper);
@@ -1006,27 +1010,27 @@ function loadBodies(id) {
             break;
         case 11:
             bodies = [
-                 {velocity: [500, 0],
-                 position: [200000, 300000],
-                 radius:27000,
-                 mass:3e28,
-                 color: '#f00'},
-
-                 {velocity: [500, 0],
-                 position: [254000, 300000],
-                 radius:27000,
-                 mass:3e28,
-                 color: '#f00'},
-
-
-                 {velocity: [500, 0],
-                 position: [308000, 300000],
+                 {velocity: [0, 0],
+                 position: [100000, 300000],
                  radius:27000,
                  mass:3e28,
                  color: '#f00'},
 
                  {velocity: [0, 0],
-                 position: [900000, 300000], // try at 11
+                 position: [154000, 300000],
+                 radius:27000,
+                 mass:3e28,
+                 color: '#f00'},
+
+
+                 {velocity: [0, 0],
+                 position: [208000, 300000],
+                 radius:27000,
+                 mass:3e28,
+                 color: '#f00'},
+
+                 {velocity: [0, 0],
+                 position: [1000000, 300000], // try at 11
                  radius:27000,
                  mass:3e28,
                  color: '#ff0'},
@@ -1071,6 +1075,7 @@ window.onload = function() {
     rectDimensions = [0, 0, windowWidth * 1000, windowHeight * 1000];
     resetCanvas(rectDimensions, true);
     document.getElementById('canvas').onclick = addBodyClick;
+    document.getElementById('geturl').onclick = getUrl;
     document.getElementById('choosebody').onchange = changeBody;
     document.onkeypress = pageEvents;
     var canvas = document.getElementById('canvas');
@@ -1081,6 +1086,11 @@ window.onload = function() {
         canvas.attachEvent('onmousewheel', handleScroll); 
     }
     window.onresize = resizeWindow;
-    loadBodies(8);
+    if (!!window.location.hash) {
+        var bodiestring = window.location.hash.substring(1);
+        bodies = JSON.parse(bodiestring)
+    } else {
+        loadBodies(8);
+    }
     calculateOrbit();
 };
