@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test</title>
+    <script type='text/javascript'>
+        Array.prototype.rotatex = function(angle) {
+            return [this[0], this[1]*Math.cos(angle) - this[2]*Math.sin(angle), this[1]*Math.sin(angle) + this[2]*Math.cos(angle)];
+        }
+        Array.prototype.rotatey = function(angle) {
+            return [this[0]*Math.cos(angle) - this[2]*Math.sin(angle), this[1], this[0]*Math.sin(angle) + this[2]*Math.cos(angle)];
+        }
+        Array.prototype.rotatez = function(angle) {
+            return [this[0]*Math.cos(angle) - this[1]*Math.sin(angle), this[0]*Math.sin(angle) + this[1]*Math.cos(angle), this[2]];
+        }
+        Array.prototype.add = function(vect2) {
+            return [this[0]+vect2[0], this[1]+vect2[1], this[2]+vect2[2]];
+        }
+        Array.prototype.scale = function(factor) {
+            factor = 1/factor;
+            return [this[0]*factor, this[1]*factor, this[2]*factor];
+        }
+        window.onload = function() {
+            primary = document.getElementById('primary').getContext('2d');
+            secondary = document.getElementById('secondary').getContext('2d');
+            /*
+            primary.setTransform(1, 0, 0, 1, 0, 0);
+            primary.scale(1/10000, 1/10000);
+            */
+            primary.fillStyle = '#000';
+            primary.fillRect(0, 0, 1300/* * 1000 */, 600/* * 1000 */);
+            /*
+            for (var i = 100; i--;) {
+                primary.setTransform(1, 0, 0, 1, 0, 0);
+                primary.scale(1/(10000 + i * 10), 1/(10000 + i * 10));
+                secondary.setTransform(1, 0, 0, 1, 0, 0);
+                secondary.scale(1/(10000 + i * 10), 1/(10000 + i * 10));
+                primary.beginPath();
+                primary.arc(i * 30000, i * 70000, i * 100000, 0, Math.PI * 2, 1);
+                primary.closePath();
+                primary.fillStyle = 'rgb(' + (127 + randInt(127)) + ',' + (127 + randInt(127)) + ',' + (127 + randInt(127)) + ')';
+                primary.fill();
+                secondary.drawImage(primary.canvas, 0, 0, 1300 * (10000 + i * 10), 600 * (10000 + i * 10));
+                primary.drawImage(secondary.canvas, 0, 0, 1300 * (10000 + i * 10), 600 * (10000 + i * 10));
+            }
+            */
+            /*
+            xvect = [100,0,0];
+            yvect = [0,100,0];
+            zvect = [0,0,100];
+            a1vect = [100, 100, 0];
+            a2vect = [0, 100, 100];
+            a3vect = [100, 0, 100];
+            a4vect = [100, 100, 100];
+            */
+            origin = [400, 400, 0];
+            zadd = 0;
+            xdeg = 0;
+            ydeg = 0;
+            zdeg = 0;
+            //drawLines(primary);
+            bodies = [];
+            for (var i = 100; i--;) {
+                bodies[i] = {0:[randInt(1200), randInt(1200), randInt(1200)], c:'rgb(' + randInt(255) + ',' + randInt(255) + ',' + randInt(255) + ')'};
+            }
+            console.log(bodies[0][0]);
+            drawBodies(primary);
+            document.onkeypress = pageEvents;
+        };
+        function pageEvents(ev) {
+            var ekey = ev.which;
+            if (ekey == 97) {
+                xdeg += Math.PI/36;
+            }
+            if (ekey == 100) {
+                zdeg += Math.PI/36;
+            }
+            if (ekey == 115) {
+                ydeg += Math.PI/36;
+            }
+            if (ekey == 98) {
+                origin[2] += 10;
+                zadd += 10;
+            }
+            if (ekey == 99) {
+                origin[2] -= 10;
+                zadd -= 10;
+            }
+            //drawLines(primary);
+            drawBodies(primary);
+        }
+        function drawBodies(primary) {
+            primary.fillStyle = '#000';
+            primary.fillRect(0,0,1300,600);
+            //bodies.sort(comparez);
+            var position2, position1;
+            for (var i = bodies.length; i--;) {
+                var position = bodies[i][0].rotatex(xdeg).rotatey(ydeg).rotatez(zdeg);
+                //console.log(position);
+                var scale = (600+position[1]+zadd)/600;
+                //console.log(scale);
+                if (scale > 0) {
+                    position = position.scale(scale);
+                    drawBody(position[0]+600, position[2]+300, 10/scale, bodies[i].c, primary);
+                }
+            }
+            otherDrawing(primary);
+        }
+        function comparez(a,b) {
+            return (a[0][1]-b[0][1]);
+        }
+        function drawLines(primary) {
+            var x2vect = xvect.add(origin).rotatex(xdeg).rotatey(ydeg).rotatez(zdeg);
+            x2vect = x2vect.scale(((1300+x2vect[2])/1300));
+            var y2vect = yvect.add(origin).rotatex(xdeg).rotatey(ydeg).rotatez(zdeg);
+            y2vect = y2vect.scale(((1300+y2vect[2])/1300));
+            var z2vect = zvect.add(origin).rotatex(xdeg).rotatey(ydeg).rotatez(zdeg);
+            z2vect = z2vect.scale(((1300+z2vect[2])/1300));
+            var a12vect = a1vect.add(origin).rotatex(xdeg).rotatey(ydeg).rotatez(zdeg);
+            a12vect = a12vect.scale(((1300+a12vect[2])/1300));
+            var a22vect = a2vect.add(origin).rotatex(xdeg).rotatey(ydeg).rotatez(zdeg);
+            a22vect =  a22vect.scale(((1300+a22vect[2])/1300));
+            var a32vect = a3vect.add(origin).rotatex(xdeg).rotatey(ydeg).rotatez(zdeg);
+            a32vect = a32vect.scale(((1300+a32vect[2])/1300));
+            var a42vect = a4vect.add(origin).rotatex(xdeg).rotatey(ydeg).rotatez(zdeg);
+            a42vect = a42vect.scale(((1300+a42vect[2])/ 1300));
+            var origin2 = origin.rotatex(xdeg).rotatey(ydeg).rotatez(zdeg);
+            origin2 = origin2.scale(((1300+origin2[2])/1300));
+            primary.fillStyle = '#000';
+            primary.fillRect(0,0,1300,600);
+            drawBody(origin[0], origin[1], 10, '#fff', primary);
+            drawLine(x2vect[0], x2vect[1], origin2[0], origin2[1], 10, '#f00', primary);
+            drawLine(y2vect[0], y2vect[1], origin2[0], origin2[1], 10, '#0f0', primary);
+            drawLine(z2vect[0], z2vect[1], origin2[0], origin2[1], 10, '#00f', primary);
+            drawLine(a12vect[0], a12vect[1], x2vect[0], x2vect[1], 10, '#fff', primary);
+            drawLine(a12vect[0], a12vect[1], y2vect[0], y2vect[1], 10, '#fff', primary);
+            drawLine(a22vect[0], a22vect[1], y2vect[0], y2vect[1], 10, '#fff', primary);
+            drawLine(a22vect[0], a22vect[1], z2vect[0], z2vect[1], 10, '#fff', primary);
+            drawLine(a22vect[0], a22vect[1], a42vect[0], a42vect[1], 10, '#fff', primary);
+            drawLine(z2vect[0], z2vect[1], a32vect[0], a32vect[1], 10, '#fff', primary);
+            drawLine(a32vect[0], a32vect[1], a42vect[0], a42vect[1], 10, '#fff', primary);
+            drawLine(a32vect[0], a32vect[1], x2vect[0], x2vect[1], 10, '#fff', primary);
+            drawLine(a42vect[0], a42vect[1], a12vect[0], a12vect[1], 10, '#fff', primary)
+            otherDrawing(primary);
+        }
+        function otherDrawing(primary) {
+            var gradient1 = primary.createLinearGradient(100,100,200,100);
+            gradient1.addColorStop(0, '#ff0');
+            gradient1.addColorStop(0.5, '#000');
+            var gradient2 = primary.createLinearGradient(200,200,300,200);
+            gradient2.addColorStop(0, '#ff0');
+            gradient2.addColorStop(1, '#000');
+            drawLine(100,100,200,100,10,gradient1,primary);
+            drawLine(200,200,300,200,10,gradient2,primary);
+        }
+        function drawLine(x, y, oldx, oldy, radius, color, paper) {
+            paper.lineWidth = .2*radius;
+            paper.lineCap = 'round';
+            paper.beginPath();
+            paper.moveTo(oldx, oldy);
+            paper.lineTo(x, y);
+            paper.strokeStyle = color;
+            paper.fillStyle = color;
+            paper.stroke();
+        }
+        function randInt(limit) {
+            return Math.floor(Math.random() * limit);
+        }
+        function drawBody(x, y, r, color, paper) {
+            paper.strokeStyle = '#ccc';
+            paper.beginPath();
+            paper.arc(x, y, r, 0, Math.PI * 2, 1);
+            paper.closePath();
+            paper.fillStyle = color;
+            paper.stroke();
+            paper.fill();
+        }
+    </script>
+</head>
+<body>
+<canvas id='primary' width='1300' height='600'></canvas>
+<canvas id='secondary' width='1300' height='600'></canvas>
+</body>
+</html>
