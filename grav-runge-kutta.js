@@ -35,28 +35,29 @@ function getWidth() {
  * Add vector mathematics methods to the Array prototype (based on methods found in the Sylvester Javascript Library)
  */
 Array.prototype.add = function(addarray) {
-    return [this[0] + addarray[0], this[1] + addarray[1]];
+    return [this[0] + addarray[0], this[1] + addarray[1], (this[2] || 0) + (addarray[2] || 0)];
 }
 Array.prototype.subtract = function(subarray) {
-    return [this[0] - subarray[0], this[1] - subarray[1]];
+    return [this[0] - subarray[0], this[1] - subarray[1], (this[2] || 0) - (subarray[2] || 0)];
 }
 Array.prototype.multiply = function(factor) {
-    return [this[0] * factor, this[1] * factor];
+    return [this[0] * factor, this[1] * factor, (this[2] || 0) * factor];
 }
 Array.prototype.multiplyEach = function(multArray) {
-    return [this[0] * multArray[0], this[1] * multArray[1]];
+    return [this[0] * multArray[0], this[1] * multArray[1], (this[2] || 0) * (multArray[2] || 0)];
 }
 Array.prototype.dot = function(array2) {
-    return this[0]*array2[0] + this[1]*array2[1];
+    return this[0]*array2[0] + this[1]*array2[1] + (this[2] || 0) * (array2[2] || 0);
 }
 Array.prototype.distanceFrom = function(destArray) {
     return Math.sqrt(Math.pow(this[0] - destArray[0], 2) + Math.pow(this[1] - destArray[1], 2));
 }
 Array.prototype.toUnitVector = function() {
-    var mag = Math.sqrt((this[0] * this[0]) + (this[1] * this[1]));
-    return [this[0] / mag, this[1] / mag];
+    var mag = Math.sqrt((this[0] * this[0]) + (this[1] * this[1]) + ((this[2] * this[2]) || 0));
+    return [this[0] / mag, this[1] / mag, (this[2] || 0) / mag];
 }
 Array.prototype.rotate = function(angle) {
+    // only used to initialize position of new bodies, see how to adapt to 3d
     var cosangle = Math.cos(angle);
     var sinangle = Math.sin(angle);
     return [(cosangle * this[0]) + (-sinangle * this[1]), (sinangle * this[0]) + (cosangle * this[1])];
@@ -102,12 +103,6 @@ function addBodyClick(ev) {
 }
 
 function pageEvents(ev) {
-    /*
-    var textx = energyText.getAttribute('x');
-    var texty = energyText.getAttribute('y');
-    var size = parseInt(energyText.getAttribute('font-size'), 10);
-    */
-    //paper.clearRect(-rectDimensions[0],-rectDimensions[1],rectDimensions[2],rectDimensions[3]);
     var ek = ev.which;
     var willReset = false;
     var oldRect = rectDimensions.slice();
@@ -311,11 +306,11 @@ function calculateOrbit() {
     var hh = 0.5; //rk4 half timestep
     var h6 = 1/6;  //rk4 1/6 timestep
     for (var i = bodiesLength; i--;) {
-        derivative1[i] = {position:[0,0], velocity:[0,0]};
-        derivative2[i] = {position:[0,0], velocity:[0,0]};
-        derivative3[i] = {position:[0,0], velocity:[0,0]};
-        derivative4[i] = {position:[0,0], velocity:[0,0]};
-        yt[i] = {position:[0,0], velocity:[0,0]};
+        derivative1[i] = {position:[0,0,0], velocity:[0,0,0]};
+        derivative2[i] = {position:[0,0,0], velocity:[0,0,0]};
+        derivative3[i] = {position:[0,0,0], velocity:[0,0,0]};
+        derivative4[i] = {position:[0,0,0], velocity:[0,0,0]};
+        yt[i] = {position:[0,0,0], velocity:[0,0,0]};
     }
     var massiveColliders = [];
     var smallColliders = [];
@@ -446,7 +441,7 @@ function addBody(x, y, newMass, randomOrientation) {
     if (newRadius < 6000) {
 	newRadius = 6000;
     }
-    var newPosition = [x, y];
+    var newPosition = [x, y, 0];
     var velocity = 0;
     var bodiesLength = bodies.length;
     if (bodiesLength > 0) {
@@ -454,10 +449,10 @@ function addBody(x, y, newMass, randomOrientation) {
         var mostMassiveBody = bodies[bodies.length - 1];
         var massiveIndex = 0;
         var delp = mostMassiveBody.position.subtract(newPosition);
-        var massDistance = mostMassiveBody.mass / ((delp[0] * delp[0]) + (delp[1] * delp[1]));
+        var massDistance = mostMassiveBody.mass / delp.dot(delp);
         for (var i = bodiesLength - 1; i--;) {
             var delp = bodies[i].position.subtract(newPosition);
-            var newMassDistance = bodies[i].mass / ((delp[0] * delp[0]) + (delp[1] * delp[1]));
+            var newMassDistance = bodies[i].mass / delp.dot(delp);
             if (newMassDistance > massDistance) {
                 mostMassiveBody = bodies[i];
                 massiveIndex = i;
@@ -469,7 +464,7 @@ function addBody(x, y, newMass, randomOrientation) {
         // from the most massive body to get an orbital velocity vector relative to COM
         velocity = mostMassiveBody.position.subtract(newPosition).toUnitVector().rotate(-Math.PI / 2).multiply(Math.sqrt((gravConstant * mostMassiveBody.mass) / mostMassiveBody.position.distanceFrom(newPosition))).add(mostMassiveBody.velocity);
     } else {
-        velocity = [0,0];
+        velocity = [0,0,0];
     }
     if (typeof(randomOrientation) != 'undefined' && randomOrientation == true) {
         velocity = velocity.rotate(2*Math.PI*Math.random());
@@ -826,7 +821,6 @@ function loadBodies(id) {
              ];
              break;
         case 8:
-            //other
             bodies = [
 // A "static" pyramid as defined by the following bodies will eventually acquire angular momentum
 // showing how errors in the integrator can build up to allow non-physical behavior

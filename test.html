@@ -151,6 +151,12 @@
             gradient2.addColorStop(1, '#000');
             drawLine(100,100,200,100,10,gradient1,primary);
             drawLine(200,200,300,200,10,gradient2,primary);
+            var gradientr = primary.createRadialGradient(135,15,15,140,20,40);
+            gradientr.addColorStop(0, '#fff');
+            gradientr.addColorStop(.8, 'rgb(0,255,255)');
+            gradientr.addColorStop(1, 'rgba(0,255,255,0)');
+            primary.fillStyle = gradientr;
+            primary.fillRect(0,0,1300,600);
         }
         function drawLine(x, y, oldx, oldy, radius, color, paper) {
             paper.lineWidth = .2*radius;
