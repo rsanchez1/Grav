@@ -19,53 +19,109 @@
             factor = 1/factor;
             return [this[0]*factor, this[1]*factor, this[2]*factor];
         }
-        window.onload = function() {
-            primary = document.getElementById('primary').getContext('2d');
-            primary.fillStyle = '#000';
-            primary.fillRect(0, 0, 1300/* * 1000 */, 1200/* * 1000 */);
-            origin = [400, 400, 0];
-            zadd = 0;
-            xadd = 0;
-            yadd = 0;
-            xdeg = 0;
-            ydeg = 0;
-            zdeg = 0;
-            bodies = [];
-            for (var i = 50; i--;) {
-                bodies[i] = {0:[randInt(1200), -600 + randInt(1200), randInt(300)], c:'rgb(' + (125 + randInt(125)) + ',' + (125 + randInt(125)) + ',' + (125 + randInt(125)) + ')', np:[], scale:0, i:i};
-            }
-            bodies[bodies.length] = {0:[0,0,0], c:'rgb(255,255,255)', np:[], scale:0, i:100};
-            bodies[bodies.length] = {0:[0,0,100], c:'rgb(255,255,0)', np:[], scale:0, i:100};
-            pause = false;
-            drawBodies(primary);
-            document.onkeypress = pageEvents;
-            setTimeout(function() {drawBodies(primary);}, 16);
-        };
+        Array.prototype.multiply = function(scalar) {
+            return [this[0]*scalar, this[1]*scalar, this[2]*scalar];
+        }
+        Array.prototype.multiplyEach = function(arr2) {
+            return [this[0]*arr2[0], this[1]*arr2[1], this[2]*arr2[2]];
+        }
+        Array.prototype.transformAxes = function(x, y, z) {
+            return [this[0] * x[0] + this[0] * y[0] + this[0] * z[0],
+                    this[1] * x[1] + this[1] * y[1] + this[1] * z[1],
+                    this[2] * x[2] + this[2] * y[2] + this[2] * z[2]];
+        }
+        Array.prototype.dot = function(arr2) {
+            return this[0]*arr2[0] + this[1]+arr2[1] + this[2]+arr2[2];
+        }
+        Array.prototype.toUnitVector = function() {
+            var mag = Math.sqrt((this[0] * this[0]) + (this[1] * this[1]) + ((this[2] * this[2]) || 0));
+            return [this[0] / mag, this[1] / mag, (this[2] || 0) / mag];
+        }
+        function randInt(limit) {
+            return Math.floor(Math.random() * limit);
+        }
         function pageEvents(ev) {
             var ekey = ev.which;
             if (ekey == 97) {
                 xdeg += 1/36;
+                yaxis = yaxis.rotatex(1/36);
+                zaxis = zaxis.rotatex(1/36);
             }
             if (ekey == 113) {
                 xdeg -= 1/36;
+                yaxis = yaxis.rotatex(-1/36);
+                zaxis = zaxis.rotatex(-1/36);
             }
             if (ekey == 100) {
                 zdeg += 1/36;
+                xaxis = xaxis.rotatez(1/36);
+                yaxis = yaxis.rotatez(1/36);
             }
             if (ekey == 101) {
                 zdeg -= 1/36;
+                xaxis = xaxis.rotatez(-1/36);
+                yaxis = yaxis.rotatez(-1/36);
             }
             if (ekey == 115) {
                 ydeg += 1/36;
+                xaxis = xaxis.rotatey(1/36);
+                zaxis = zaxis.rotatey(1/36);
             }
             if (ekey == 119) {
                 ydeg -= 1/36;
+                xaxis = xaxis.rotatey(-1/36);
+                zaxis = zaxis.rotatez(-1/36);
             }
+            var axes = xaxis.add(yaxis).add(zaxis);
+            if (axes[0] < xmin) {xmin = axes[0];}
+            if (axes[0] > xmax) {xmax = axes[0];}
+            if (axes[1] < ymin) {ymin = axes[1];}
+            if (axes[1] > ymax) {ymax = axes[1];}
+            if (axes[2] < zmin) {zmin = axes[2];}
+            if (axes[2] > zmax) {zmax = axes[2];}
             if (ekey == 102) {
                 zadd += 10;
+                var arr = [0,0,10];
+                arr = arr.rotatex(xdeg).rotatey(ydeg);
+                for (var i = bodies.length; i--;) {
+                    bodies[i][0] = bodies[i][0].add(arr);
+                }
             }
             if (ekey == 114) {
                 zadd -= 10;
+                var arr = [0,0,-10];
+                arr = arr.rotatex(xdeg).rotatey(ydeg);
+                for (var i = bodies.length; i--;) {
+                    bodies[i][0] = bodies[i][0].add(arr);
+                }
+            }
+            if (ekey == 103) {
+                var arr = [0,10,0];
+                arr = arr.rotatex(xdeg).rotatez(zdeg);
+                for (var i = bodies.length; i--;) {
+                    bodies[i][0] = bodies[i][0].add(arr);
+                }
+            }
+            if (ekey == 116) {
+                var arr = [0, -10, 0];
+                arr = arr.rotatex(xdeg).rotatez(zdeg);
+                for (var i = bodies.length; i--;) {
+                    bodies[i][0] = bodies[i][0].add(arr);
+                }
+            }
+            if (ekey == 104) {
+                var arr = [10, 0, 0];
+                arr = arr.rotatey(ydeg).rotatez(zdeg);
+                for (var i = bodies.length; i--;) {
+                    bodies[i][0] = bodies[i][0].add(arr);
+                }
+            }
+            if (ekey == 121) {
+                var arr = [-10, 0, 0];
+                arr = arr.rotatey(ydeg).rotatez(zdeg);
+                for (var i = bodies.length; i--;) {
+                    bodies[i][0] = bodies[i][0].add(arr);
+                }
             }
             if (ekey == 112) {
                 pause = !pause;
@@ -75,38 +131,75 @@
             }
             drawBodies(primary, true);
         }
+        window.onload = function() {
+            primary = document.getElementById('primary').getContext('2d');
+            primary.fillStyle = '#000';
+            primary.fillRect(0, 0, 1300, 1200);
+            origin = [400, 400, 0];
+            zadd = 0;
+            xadd = 0;
+            yadd = 0;
+            xdeg = 0;
+            ydeg = 0;
+            zdeg = 0;
+            xmax = 0;
+            xmin = 0;
+            ymin = 0;
+            ymax = 0;
+            zmin = 0;
+            zmax = 0;
+            xaxis = [1, 0, 0];
+            yaxis = [0, 1, 0];
+            zaxis = [0, 0, 1];
+            bodies = [];
+            for (var i = 50; i--;) {
+                bodies[i] = {0:[-300 + randInt(300), -300 + randInt(300), -100 + randInt(100)], c:'rgb(' + (125 + randInt(125)) + ',' + (125 + randInt(125)) + ',' + (125 + randInt(125)) + ')', np:[], scale:0, i:i};
+            }
+            bodies[bodies.length] = {0:[0,0,0], c:'rgb(255,255,255)', np:[], scale:0, i:100};
+            bodies[bodies.length] = {0:[0,0,100], c:'rgb(255,255,0)', np:[], scale:0, i:100};
+            pause = false;
+            drawBodies(primary);
+            document.onkeypress = pageEvents;
+            setTimeout(function() {drawBodies(primary);}, 16);
+        };
         function drawBodies(primary, dotime) {
             primary.fillStyle = '#000';
             primary.fillRect(0,0,1300,1200);
             var position2, position1;
             // 3D accomplished with assistance from AlteredQualia, 3D effect inspired by CanvasMol
+            var xx = xaxis.dot(xaxis);
+            var yy = yaxis.dot(yaxis);
+            var zz = zaxis.dot(zaxis);
             for (var i = bodies.length; i--;) {
+                var position = bodies[i][0];
                 var position = bodies[i][0].rotatex(xdeg).rotatey(ydeg).rotatez(zdeg);
-                var scale = (1200+position[1]+zadd)/1200;
+                //var position = bodies[i][0].multiplyEach(xaxis).multiplyEach(yaxis).multiplyEach(zaxis);
+                //var position = bodies[i][0].transformAxes(xaxis, yaxis, zaxis);
+                //position = xaxis.multiply((position.dot(xaxis)) / xx).add(yaxis.multiply((position.dot(yaxis)) / yy)).add(zaxis.multiply((position.dot(zaxis)) / zz));
+                var scale = (1200+position[2]/*+zadd*/)/1200;
                 bodies[i].np = position;
                 bodies[i].scale = scale;
             }
-            bodies.sort(function(a,b) {return a.np[1]-b.np[1]});
+            bodies.sort(function(a,b) {return a.np[2]-b.np[2]});
             for (var i = bodies.length; i--;) {
                 var position = bodies[i].np;
                 var scale = bodies[i].scale;
                 if (scale > 0) {
                     position = position.scale(scale);
                     var radius = 10/scale;
-                    var grad = primary.createRadialGradient(position[0]+600, position[2]+300, 0.15*radius/scale, position[0]+600, position[2]+300, radius);
+                    var grad = primary.createRadialGradient(position[0]+600, position[1]+300, 0.15*radius/scale, position[0]+600, position[1]+300, radius);
                     grad.addColorStop(0, bodies[i].c);
                     grad.addColorStop(0.95, 'rgba(0,0,0,1.0)');
                     grad.addColorStop(1, 'rgba(0,0,0,0.0)');
-                    drawBody(position[0]+600, position[2]+300, radius, grad, primary);
+                    drawBody(position[0]+600, position[1]+300, radius, grad, primary);
                 }
             }
             if (!dotime && !pause) {
                 zdeg += 1/36;
+                xaxis = xaxis.rotatez(1/36);
+                yaxis = yaxis.rotatez(1/36);
                 setTimeout(function() {drawBodies(primary);}, 64);
             }
-        }
-        function randInt(limit) {
-            return Math.floor(Math.random() * limit);
         }
         function drawBody(x, y, r, color, paper) {
             paper.beginPath();
