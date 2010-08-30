@@ -81,47 +81,63 @@
             if (axes[2] > zmax) {zmax = axes[2];}
             if (ekey == 102) {
                 zadd += 10;
+                /*
                 var arr = [0,0,10];
                 arr = arr.rotatex(xdeg).rotatey(ydeg);
                 for (var i = bodies.length; i--;) {
                     bodies[i][0] = bodies[i][0].add(arr);
                 }
+                */
             }
             if (ekey == 114) {
                 zadd -= 10;
+                /*
                 var arr = [0,0,-10];
                 arr = arr.rotatex(xdeg).rotatey(ydeg);
                 for (var i = bodies.length; i--;) {
                     bodies[i][0] = bodies[i][0].add(arr);
                 }
+                */
             }
             if (ekey == 103) {
+                yadd += 10;
+                /*
                 var arr = [0,10,0];
                 arr = arr.rotatex(xdeg).rotatez(zdeg);
                 for (var i = bodies.length; i--;) {
                     bodies[i][0] = bodies[i][0].add(arr);
                 }
+                */
             }
             if (ekey == 116) {
+                yadd -= 10;
+                /*
                 var arr = [0, -10, 0];
                 arr = arr.rotatex(xdeg).rotatez(zdeg);
                 for (var i = bodies.length; i--;) {
                     bodies[i][0] = bodies[i][0].add(arr);
                 }
+                */
             }
             if (ekey == 104) {
+                xadd += 10;
+                /*
                 var arr = [10, 0, 0];
                 arr = arr.rotatey(ydeg).rotatez(zdeg);
                 for (var i = bodies.length; i--;) {
                     bodies[i][0] = bodies[i][0].add(arr);
                 }
+                */
             }
             if (ekey == 121) {
+                xadd -= 10;
+                /*
                 var arr = [-10, 0, 0];
                 arr = arr.rotatey(ydeg).rotatez(zdeg);
                 for (var i = bodies.length; i--;) {
                     bodies[i][0] = bodies[i][0].add(arr);
                 }
+                */
             }
             if (ekey == 112) {
                 pause = !pause;
@@ -153,7 +169,8 @@
             zaxis = [0, 0, 1];
             bodies = [];
             for (var i = 50; i--;) {
-                bodies[i] = {0:[-300 + randInt(300), -300 + randInt(300), -100 + randInt(100)], c:'rgb(' + (125 + randInt(125)) + ',' + (125 + randInt(125)) + ',' + (125 + randInt(125)) + ')', np:[], scale:0, i:i};
+                //bodies[i] = {0:[-300 + randInt(300), -300 + randInt(300), -100 + randInt(100)], c:'rgb(' + (125 + randInt(125)) + ',' + (125 + randInt(125)) + ',' + (125 + randInt(125)) + ')', np:[], scale:0, i:i};
+                bodies[i] = {0:[100*Math.sin(i/50*12), 100*Math.cos(i/50*12), i*8-200], c:'rgb(' + (125 + randInt(125)) + ',' + (125 + randInt(125)) + ',' + (125 + randInt(125)) + ')', np:[], scale:0, i:i};
             }
             bodies[bodies.length] = {0:[0,0,0], c:'rgb(255,255,255)', np:[], scale:0, i:100};
             bodies[bodies.length] = {0:[0,0,100], c:'rgb(255,255,0)', np:[], scale:0, i:100};
@@ -172,7 +189,18 @@
             var zz = zaxis.dot(zaxis);
             for (var i = bodies.length; i--;) {
                 var position = bodies[i][0];
-                var position = bodies[i][0].rotatex(xdeg).rotatey(ydeg).rotatez(zdeg);
+                var xd = position[0];
+                var yd = position[1];
+                var zd = position[2];
+                //var position = bodies[i][0].rotatex(xdeg).rotatey(ydeg).rotatez(zdeg);
+                var zx = xd * Math.cos(zdeg) - yd * Math.sin(zdeg) - xd;
+                var zy = xd * Math.sin(zdeg) + yd * Math.cos(zdeg) - yd;
+                var yx = (xd+zx) * Math.cos(ydeg) - zd * Math.sin(ydeg) - (xd+zx);
+                var yz = (xd+zx) * Math.sin(ydeg) + zd * Math.cos(ydeg) - zd;
+                var xy = (yd+zy) * Math.cos(xdeg) - (zd+yz) * Math.sin(xdeg) - (yd+zy);
+                var xz = (yd+zy) * Math.sin(xdeg) + (zd+yz) * Math.cos(xdeg) - (zd+yz);
+                var offset = [yx+zx, zy+xy, xz+yz];
+                position = position.add(offset).add([xadd,yadd,zadd]);
                 //var position = bodies[i][0].multiplyEach(xaxis).multiplyEach(yaxis).multiplyEach(zaxis);
                 //var position = bodies[i][0].transformAxes(xaxis, yaxis, zaxis);
                 //position = xaxis.multiply((position.dot(xaxis)) / xx).add(yaxis.multiply((position.dot(yaxis)) / yy)).add(zaxis.multiply((position.dot(zaxis)) / zz));
