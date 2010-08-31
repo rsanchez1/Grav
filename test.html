@@ -215,7 +215,7 @@
                 if (scale > 0) {
                     position = position.scale(scale);
                     var radius = 10/scale;
-                    var grad = primary.createRadialGradient(position[0]+600, position[1]+300, 0.15*radius/scale, position[0]+600, position[1]+300, radius);
+                    var grad = primary.createRadialGradient(position[0]+600, position[1]+300, 0.1*radius/scale, position[0]+600, position[1]+300, radius);
                     grad.addColorStop(0, bodies[i].c);
                     grad.addColorStop(0.95, 'rgba(0,0,0,1.0)');
                     grad.addColorStop(1, 'rgba(0,0,0,0.0)');
