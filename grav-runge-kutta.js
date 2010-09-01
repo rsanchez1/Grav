@@ -464,7 +464,6 @@ function calculateOrbit() {
         var offset = [yx+zx, zy+xy, xz+yz];
         position = position.add(offset).add([xadd,yadd,zadd]);
         bodies[i].adjustedPosition = position;
-j       /*----------------------------*/
         /*
         drawBody(bodies[i].position[0], bodies[i].position[1], bodies[i].radius, bodies[i].color, paper);
         if (alpha < 1) {
@@ -498,6 +497,7 @@ j       /*----------------------------*/
         bodyCount = bodies.length;
         document.getElementById('bodyCount').innerHTML = 'There are ' + bodyCount + ' bodies.';
     }
+    //ydeg += Math.PI / 3600;
     if (!isPaused) {
         setTimeout(calculateOrbit, 16);
     }
@@ -537,6 +537,7 @@ function addBody(x, y, newMass, randomOrientation) {
     if (typeof(randomOrientation) != 'undefined' && randomOrientation == true) {
         velocity = velocity.rotate(2*Math.PI*Math.random());
     }
+    velocity = [velocity[0], velocity[1], 0];
     var color = 'rgb(' + (127 + randInt(127)) + ',' + (127 + randInt(127)) + ',' + (127 + randInt(127)) + ')';
     bodies[bodies.length] = {mass: newMass, velocity: velocity, radius: newRadius, position: newPosition, color:color, adjustedPosition:[]};
     if (isPaused) {
@@ -716,14 +717,14 @@ function loadBodies(id) {
         case 1:
             // two-body system
             bodies = [{
-                velocity: [0, 1009.01932588033218502780, 0],
+                velocity: [0, 0, 1009.01932588033218502780],
                 position: [500000, 300000, 0],
                 radius: 10000,
                 mass: 1e29,
                 adjustedPosition: [],
                 color: '#ff0'},
             {
-                velocity: [0, -1009.01932588033218502780, 0],
+                velocity: [0, 0, -1009.01932588033218502780],
                 position: [900000, 300000, 0],
                 radius: 10000,
                 mass: 1e29,
@@ -1040,7 +1041,7 @@ function loadBodies(id) {
                  {velocity: [0, 0, 0],
                  position: [1000000, 300000, -600000], // try at 11
                  radius:7000,
-                 mass:3e-58,
+                 mass:3e28,
                  color: '#ff0'},
             ];
             break;
