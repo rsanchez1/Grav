@@ -462,11 +462,8 @@ function calculateOrbit() {
         var xy = (yd+zy) * Math.cos(xdeg) - (zd+yz) * Math.sin(xdeg) - (yd+zy);
         var xz = (yd+zy) * Math.sin(xdeg) + (zd+yz) * Math.cos(xdeg) - (zd+yz);
         var offset = [yx+zx, zy+xy, xz+yz];
-        if (i == 0) {debug(offset.toString());}
         position = position.add(offset).add([xadd,yadd,zadd]);
-        if (i == 0) {debug(position.toString());}
         bodies[i].adjustedPosition = position;
-        if (i == 0) {debug(bodies[i].adjustedPosition.toString());}
         /*----------------------------*/
         /*
         drawBody(bodies[i].position[0], bodies[i].position[1], bodies[i].radius, bodies[i].color, paper);
@@ -503,6 +500,7 @@ function calculateOrbit() {
         bodyCount = bodies.length;
         document.getElementById('bodyCount').innerHTML = 'There are ' + bodyCount + ' bodies.';
     }
+    //ydeg += Math.PI / 3600;
     if (!isPaused) {
         setTimeout(calculateOrbit, 16);
     }
@@ -542,6 +540,7 @@ function addBody(x, y, newMass, randomOrientation) {
     if (typeof(randomOrientation) != 'undefined' && randomOrientation == true) {
         velocity = velocity.rotate(2*Math.PI*Math.random());
     }
+    velocity = [velocity[0], velocity[1], 0];
     var color = 'rgb(' + (127 + randInt(127)) + ',' + (127 + randInt(127)) + ',' + (127 + randInt(127)) + ')';
     bodies[bodies.length] = {mass: newMass, velocity: velocity, radius: newRadius, position: newPosition, color:color, adjustedPosition:[]};
     if (isPaused) {
@@ -721,14 +720,14 @@ function loadBodies(id) {
         case 1:
             // two-body system
             bodies = [{
-                velocity: [0, 1009.01932588033218502780, 0],
+                velocity: [0, 0, 1009.01932588033218502780],
                 position: [500000, 300000, 0],
                 radius: 10000,
                 mass: 1e29,
                 adjustedPosition: [],
                 color: '#ff0'},
             {
-                velocity: [0, -1009.01932588033218502780, 0],
+                velocity: [0, 0, -1009.01932588033218502780],
                 position: [900000, 300000, 0],
                 radius: 10000,
                 mass: 1e29,
@@ -903,139 +902,72 @@ function loadBodies(id) {
 // Pyramid constructed by setting a bottom row of bodies aligned on the x-axis,
 // rotating a radius vector [0, r] for bodies of radius r by -Math.PI / 6, multiplying 2,
 // then adding the new vector to the position vector of a body, stacking bodies as appropriate
-                 {velocity: [0, 0],
-                 position: [200000, 300000],
+                 {velocity: [0, 0, 0],
+                 position: [200000, 300000, 0],
                  radius:27000,
                  mass:3e28,
                  color: '#f00'},
 
-                 {velocity: [0, 0],
-                 position: [254000, 300000],
+                 {velocity: [0, 0, 0],
+                 position: [254000, 300000, 0],
                  radius:27000,
                  mass:3e28,
                  color: '#f00'},
 
-                 {velocity: [0, 0],
-                 position: [308000, 393530.7436087194],
+                 {velocity: [0, 0, 0],
+                 position: [308000, 393530.7436087194, 0],
                  radius:27000,
                  mass:3e28,
                  color: '#ff0'},
 
-                 {velocity: [0, 0],
-                 position: [254000, 393530.7436087194],
+                 {velocity: [0, 0, 0],
+                 position: [254000, 393530.7436087194, 0],
                  radius:27000,
                  mass:3e28,
                  color: '#ff0'},
 
-                 {velocity: [0, 0],
-                 position: [227000, 346765.3718043597],
+                 {velocity: [0, 0, 0],
+                 position: [227000, 346765.3718043597, 0],
                  radius:27000,
                  mass:3e28,
                  color: '#ff0'},
 
-                 {velocity: [0, 0],
-                 position: [281000, 346765.3718043597],
+                 {velocity: [0, 0, 0],
+                 position: [281000, 346765.3718043597, 0],
                  radius:27000,
                  mass:3e28,
                  color: '#ff0'},
 
-                 {velocity: [0, 0],
-                 position: [281000, 440296.1154130791],
+                 {velocity: [0, 0, 0],
+                 position: [281000, 440296.1154130791, 0],
                  radius:27000,
                  mass:3e28,
                  color: '#0ff'},
 
-                 {velocity: [0, 0],
-                 position: [335000, 346765.3718043597],
+                 {velocity: [0, 0, 0],
+                 position: [335000, 346765.3718043597, 0],
                  radius:27000,
                  mass:3e28,
                  color: '#ff0'},
 
-                 {velocity: [0, 0],
-                 position: [308000, 300000],
+                 {velocity: [0, 0, 0],
+                 position: [308000, 300000, 0],
                  radius:27000,
                  mass:3e28,
                  color: '#f00'},
 
-                 {velocity: [0, 0],
-                 position: [362000, 300000],
+                 {velocity: [0, 0, 0],
+                 position: [362000, 300000, 0],
                  radius:27000,
                  mass:3e28,
                  color: '#f00'},
 
-/*
-                 {velocity: [0, 0],
-                 position: [900000, 300000], // try at 11
-                 radius:27000,
-                 mass:3e28,
-                 color: '#ff0'},
+                 {velocity: [0, 0, 0],
+                 position: [362000, 300000, -1000000],
+                 radius:7000,
+                 mass:3e-58,
+                 color: '#fcf'},
 
-/*
-                 {velocity: [0, 0],
-                 position: [954000, 300000], // try at 11
-                 radius:27000,
-                 mass:3e28,
-                 color: '#ff0'},
-
-/*
-                 {velocity: [0, 0],
-                 position: [792000, 300000], // try at 11
-                 radius:27000,
-                 mass:3e28,
-                 color: '#ff0'},
-
-                 {velocity: [0, 0],
-                 position: [846000, 300000], // try at 11
-                 radius:27000,
-                 mass:3e28,
-                 color: '#ff0'},
-
-                 {velocity: [0, 0],
-                 position: [1008000, 300000], // try at 11
-                 radius:27000,
-                 mass:3e28,
-                 color: '#ff0'},
-
-                 {velocity: [0, 0],
-                 position: [1062000, 300000], // try at 11
-                 radius:27000,
-                 mass:3e28,
-                 color: '#ff0'},
-
-                 {velocity: [0, 0],
-                 position: [1116000, 300000], // try at 11
-                 radius:27000,
-                 mass:3e28,
-                 color: '#ff0'},
-
-                 {velocity: [0, 0],
-                 position: [1170000, 300000], // try at 11
-                 radius:27000,
-                 mass:3e28,
-                 color: '#ff0'},
-                 /*
-
-                 {velocity: [0, 0],
-                 position: [1600000, 300000],
-                 radius:99600,
-                 mass:8.5468e29,
-                 color: '#f00'},
-                 */
-
-
-/*
-                 {velocity: [0, 5899.71796478441840439347], // Upsilon Andromidae
-                 position: [8000000, 3000000],
-                 radius:9960,
-                 mass:8.5468e27,
-                 color: '#f00'},
-
-                 {velocity: [0, -5899.71796478441840439347], // Upsilon Andromidae
-                 position: [4000000, 3000000],
-                 radius:9960,
-                 mass:8.5468e27,
-                 color: '#f00'},
-                 */
             ];
             break;
         case 10:
@@ -1107,7 +1039,7 @@ function loadBodies(id) {
                  {velocity: [0, 0, 0],
                  position: [1000000, 300000, -600000], // try at 11
                  radius:7000,
-                 mass:3e-58,
+                 mass:3e28,
                  color: '#ff0'},
             ];
             break;
