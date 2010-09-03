@@ -7,7 +7,6 @@
  * Some Utility Functions
  */
 function debug(e) {
-    return;
     if (window.console && console.log) {
         // Firebug
         return console.log(e);
@@ -107,7 +106,8 @@ function addBodyClick(ev) {
     if (!!ev.shiftKey) {
         randomOrientation = true;
     }
-    addBody((x * (rectDimensions[2] / windowWidth)) - rectDimensions[0], (y * (rectDimensions[3] / windowHeight)) - rectDimensions[1], +document.getElementById('newmass').value, randomOrientation);
+    var scale = Math.abs(120000/(120000+zadd));
+    addBody((x * (windowWidth) / scale) - xadd, (y * (windowHeight / scale)) - yadd, +document.getElementById('newmass').value, randomOrientation);
 }
 
 function handleArrowEvents(ev) {
@@ -119,19 +119,18 @@ function handleArrowEvents(ev) {
 function pageEvents(ev) {
     var ek = ev.which;
     var willReset = false;
-    var oldRect = rectDimensions.slice();
+    var scale = Math.abs((120000)/(120000+zadd));
+    debug(scale);
+    debug((-(ek == 100) || +(ek == 97)) / (scale * 30));
     // transform the canvas based on movement/zoom
-    rectDimensions[0] += rectDimensions[2] * ((-(ek == 105) * (45 / 990)) || (+(ek == 111) * (45 / 900)) || ((-(ek == 100) || (+(ek == 97))) * (1 / 30)));
-    rectDimensions[1] += rectDimensions[3] * (((-(ek == 105) || +(ek == 111)) * (45 / 990)) || ((-(ek == 115) || (+(ek == 119))) * (1 / 30)));
-    rectDimensions[2] *= (+(ek == 111) * 1.10) || (+(ek == 105) * (90 / 99)) || 1;
-    rectDimensions[3] *= (+(ek == 111) * 1.10) || (+(ek == 105) * (90 / 99)) || 1;
+    xadd += windowWidth * ((-(ek == 100) || +(ek == 97)) / (scale * 30));
+    //rectDimensions[0] += rectDimensions[2] * ((-(ek == 105) * (45 / 990)) || (+(ek == 111) * (45 / 900)) || ((-(ek == 100) || (+(ek == 97))) * (1 / 30)));
+    yadd += windowHeight * ((-(ek == 115) || +(ek == 119)) / (scale * 30));
+    var add = .1*zadd;
+    if (add < 1000) {add = 1000;}
+    zadd += (-(ek == 105) || +(ek == 111)) * add;
     willReset = ek == 111 || ek == 105 || ek == 115 || ek == 100 || ek == 119 || ek == 97 || ek == 107 || ek == 117 || ek == 106 || ek == 105;
 
-    var scale = rectDimensions[2] / windowWidth;
-    debug(ek);
-    //zadd += (-(ek == 105) || +(ek == 107)) * 10 * scale;
-    if (ek == 37) {alert('thing');}
-    ydeg += (-(ek == 117) || +(ek == 106)) * 1/36;
     // increase/decrease trace length
     alpha *= (.5 * +(ek == 109)) || (2 * +(ek == 108)) || 1;
     if (alpha > 1) {
@@ -169,26 +168,23 @@ function pageEvents(ev) {
         isBounce = !isBounce;
         document.getElementById('bounce').innerHTML = (isBounce && 'On') || 'Off';
     }
-    resetCanvas(oldRect, willReset);
+    resetCanvas(willReset);
 }
 
 function resizeWindow() {
-    var scaleWidth = rectDimensions[2] / windowWidth;
-    var scaleHeight = rectDimensions[3] / windowHeight;
     windowWidth = getWidth();
     windowHeight = getHeight();
-    var oldRect = rectDimensions.slice();
     paper.canvas.width = windowWidth;
     paper.canvas.height = windowHeight;
     var transition = document.getElementById('transition');
     transition.width = windowWidth;
     transition.height = windowHeight;
-    rectDimensions[2] = scaleWidth * windowWidth;
-    rectDimensions[3] = scaleHeight * windowHeight;
-    resetCanvas(oldRect, true);
+    resetCanvas(true);
 }
 
-function resetCanvas(oldRect, willReset) {
+function resetCanvas(willReset) {
+    /*
+    TODO: REDO ALL OF THIS TO USE ZADD
     var transition = document.getElementById('transition').getContext('2d');
     if (willReset) {
         if (antiFlicker || alpha < 1) {
@@ -210,10 +206,12 @@ function resetCanvas(oldRect, willReset) {
             drawBody(bodies[i].position[0], bodies[i].position[1], bodies[i].radius, bodies[i].color, paper);
         }
     }
-    document.getElementById('viewx').innerHTML = 'X: ' + parseInt(rectDimensions[0], 10);
-    document.getElementById('viewy').innerHTML = 'Y: ' + parseInt(rectDimensions[1], 10);
-    document.getElementById('viewidth').innerHTML = 'Width: ' + parseInt(rectDimensions[2], 10);
-    document.getElementById('viewheight').innerHTML = 'Height: ' + parseInt(rectDimensions[3], 10);
+    */
+    document.getElementById('viewx').innerHTML = 'X: ' + parseInt(xadd, 10);
+    document.getElementById('viewy').innerHTML = 'Y: ' + parseInt(yadd, 10);
+    var scale = Math.abs((120000)/(120000+zadd));
+    document.getElementById('viewidth').innerHTML = 'Width: ' + parseInt(windowWidth/scale, 10);
+    document.getElementById('viewheight').innerHTML = 'Height: ' + parseInt(windowHeight/scale, 10);
 }
 
 function changeBody(ev) {
@@ -270,7 +268,7 @@ function derivatives(state, derivative, getEnergy, colliders1, colliders2) {
     for (var i = bodiesLength; i--;) {
         for (var j = i; j--;) {
             var diff = state[i].position.subtract(state[j].position);
-            debug('Diff: ' + diff.toString());
+            //debug('Diff: ' + diff.toString());
 	    if (getColliders) {
 		var radii = bodies[i].radius + bodies[j].radius;
 		if (diff.dot(diff) <= (radii*radii)) {
@@ -294,15 +292,15 @@ function derivatives(state, derivative, getEnergy, colliders1, colliders2) {
 		}
 	    }
             var dist = state[i].position.distanceFrom(state[j].position)
-            debug('Dist: ' + dist);
+            //debug('Dist: ' + dist);
             var mult = gravConstant / (dist * dist * dist);
-            debug('Mult: ' + mult);
+            //debug('Mult: ' + mult);
             var multi = -mult * bodies[j].mass;
             var multj = mult * bodies[i].mass;
             derivative[i].velocity = derivative[i].velocity.add(diff.multiply(multi));
-            debug('Derivative I: ' + derivative[i].velocity.toString());
+            //debug('Derivative I: ' + derivative[i].velocity.toString());
             derivative[j].velocity = derivative[j].velocity.add(diff.multiply(multj));
-            debug('Derivative J: ' + derivative[j].velocity.toString());
+            //debug('Derivative J: ' + derivative[j].velocity.toString());
             if (getEnergy) {
                 totalEnergy -= (gravConstant * bodies[j].mass * bodies[i].mass) / dist;
             }
@@ -345,20 +343,20 @@ function calculateOrbit() {
     } else {
         energy = derivatives(bodies, derivative1, true);
     }
-    debug(bodies[0].position.toString());
+    //debug(bodies[0].position.toString());
     //energyText.firstChild.textContent = 'U: ' + energy;
     for (var i = bodiesLength; i--;) {
         yt[i].position = bodies[i].position.add(derivative1[i].position.multiply(hh));
         yt[i].velocity = bodies[i].velocity.add(derivative1[i].velocity.multiply(hh));
     }
     derivatives(yt, derivative2); // compute the second derivative for rk4 using the position and velocity updated from first derivative
-    debug(bodies[0].position.toString());
+    //debug(bodies[0].position.toString());
     for (var i = bodiesLength; i--;) {
         yt[i].position = bodies[i].position.add(derivative2[i].position.multiply(hh));
         yt[i].velocity = bodies[i].velocity.add(derivative2[i].velocity.multiply(hh));
     }
     derivatives(yt, derivative3);
-    debug(bodies[0].position.toString());
+    //debug(bodies[0].position.toString());
     for (var i = bodiesLength; i--;) {
         yt[i].position = bodies[i].position.add(derivative3[i].position);
         yt[i].velocity = bodies[i].velocity.add(derivative3[i].velocity);
@@ -366,10 +364,10 @@ function calculateOrbit() {
         derivative3[i].velocity = derivative3[i].velocity.add(derivative2[i].velocity);
     }
     derivatives(yt, derivative4);
-    debug(bodies[0].position.toString());
+    //debug(bodies[0].position.toString());
     if (alpha >= 0.001) {
         paper.fillStyle = 'rgba(0,0,0,' + alpha + ')';
-        paper.fillRect(-rectDimensions[0], -rectDimensions[1], rectDimensions[2], rectDimensions[3]);
+        paper.fillRect(0, 0, windowWidth, windowHeight);
     }
     if (massiveColliders.length > 0) {
 	// get the new momentum for the massive body, and the new mass
@@ -437,24 +435,24 @@ function calculateOrbit() {
         }
     }
     bodiesLength = bodies.length;
-    debug(bodies[0].position.toString());
-    debug('------------------------------');
-    debug(derivative1);
-    debug(derivative2);
-    debug(derivative3);
-    debug(derivative4);
+    //debug(bodies[0].position.toString());
+    //debug('------------------------------');
+    //debug(derivative1);
+    //debug(derivative2);
+    //debug(derivative3);
+    //debug(derivative4);
     for (var i = bodiesLength; i--;) {
         var firstPosition = bodies[i].position;
         bodies[i].position = bodies[i].position.add((derivative1[i].position.add(derivative4[i].position).add(derivative3[i].position.multiply(2))).multiply(h6));
         bodies[i].velocity = bodies[i].velocity.add((derivative1[i].velocity.add(derivative4[i].velocity).add(derivative3[i].velocity.multiply(2))).multiply(h6));
         energy += .5 * bodies[i].mass * bodies[i].velocity.dot(bodies[i].velocity);
         /*------------------------------*/
-        if (i == 0) {debug(bodies[i].position.toString());}
+        //if (i == 0) {debug(bodies[i].position.toString());}
         var position = bodies[i].position.slice();
         var xd = position[0];
         var yd = position[1];
         var zd = position[2];
-        if (i == 0) {debug(position.toString());}
+        //if (i == 0) {debug(position.toString());}
         var zx = xd * Math.cos(zdeg) - yd * Math.sin(zdeg) - xd;
         var zy = xd * Math.sin(zdeg) + yd * Math.cos(zdeg) - yd;
         var yx = (xd+zx) * Math.cos(ydeg) - zd * Math.sin(ydeg) - (xd+zx);
@@ -472,12 +470,12 @@ function calculateOrbit() {
         }
         */
     }
-    debug(bodies[0].position.toString());
-    debug('thing');
+    //debug(bodies[0].position.toString());
+    //debug('thing');
     bodies.sort(function(a,b) {return a.adjustedPosition[2]-b.adjustedPosition[2];});
     for (var i = bodies.length; i--;) {
         var position = bodies[i].adjustedPosition;
-        var scale = rectDimensions[3]/(rectDimensions[3]+position[2]);
+        var scale = 120000/(120000+position[2]);
         if (scale > 0) {
             position = position.multiply(scale);
             var radius = bodies[i].radius * scale;
@@ -559,7 +557,7 @@ function addRings(dist, center, interval, mass) {
 
 function loadBodies(id) {
     paper.fillStyle = 'rgb(0,0,0)';
-    paper.fillRect(-rectDimensions[0], -rectDimensions[1], rectDimensions[2], rectDimensions[3]);
+    paper.fillRect(0, 0, windowWidth, windowHeight);
     switch (id) {
         case 0:
             // Solar System
@@ -1073,7 +1071,7 @@ window.onload = function() {
     xdeg = 0;
     ydeg = 0;
     zdeg = 0;
-    zadd = 0;
+    zadd = 100000000;
     yadd = 0;
     xadd = 0;
     var canvas = document.getElementById('canvas');
@@ -1085,8 +1083,7 @@ window.onload = function() {
     transition.width = windowWidth;
     transition.height = windowHeight;
     paper = canvas.getContext('2d');
-    rectDimensions = [0, 0, windowWidth * 1000, windowHeight * 1000];
-    resetCanvas(rectDimensions, true);
+    resetCanvas(true);
     document.getElementById('canvas').onclick = addBodyClick;
     document.getElementById('geturl').onclick = getUrl;
     document.getElementById('choosebody').onchange = changeBody;
@@ -1106,9 +1103,5 @@ window.onload = function() {
     } else {
         loadBodies(11);
     }
-    debug(bodies[0].position.toString());
-    debug(bodies[1].position.toString());
-    debug(bodies[2].position.toString());
-    debug(bodies[3].position.toString());
     calculateOrbit();
 };
