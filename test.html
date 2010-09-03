@@ -80,7 +80,8 @@
             if (axes[2] < zmin) {zmin = axes[2];}
             if (axes[2] > zmax) {zmax = axes[2];}
             if (ekey == 102) {
-                zadd += 10;
+                //zadd += 10000;
+                zadd += 10000;
                 /*
                 var arr = [0,0,10];
                 arr = arr.rotatex(xdeg).rotatey(ydeg);
@@ -90,7 +91,8 @@
                 */
             }
             if (ekey == 114) {
-                zadd -= 10;
+                //zadd -= 10000;
+                zadd -= 10000;
                 /*
                 var arr = [0,0,-10];
                 arr = arr.rotatex(xdeg).rotatey(ydeg);
@@ -100,7 +102,7 @@
                 */
             }
             if (ekey == 103) {
-                yadd += 10;
+                yadd += 10000;
                 /*
                 var arr = [0,10,0];
                 arr = arr.rotatex(xdeg).rotatez(zdeg);
@@ -110,7 +112,7 @@
                 */
             }
             if (ekey == 116) {
-                yadd -= 10;
+                yadd -= 10000;
                 /*
                 var arr = [0, -10, 0];
                 arr = arr.rotatex(xdeg).rotatez(zdeg);
@@ -120,7 +122,7 @@
                 */
             }
             if (ekey == 104) {
-                xadd += 10;
+                xadd += 10000;
                 /*
                 var arr = [10, 0, 0];
                 arr = arr.rotatey(ydeg).rotatez(zdeg);
@@ -130,7 +132,7 @@
                 */
             }
             if (ekey == 121) {
-                xadd -= 10;
+                xadd -= 10000;
                 /*
                 var arr = [-10, 0, 0];
                 arr = arr.rotatey(ydeg).rotatez(zdeg);
@@ -152,7 +154,7 @@
             primary.fillStyle = '#000';
             primary.fillRect(0, 0, 1300, 1200);
             origin = [400, 400, 0];
-            zadd = 0;
+            zadd = 1000000;
             xadd = 0;
             yadd = 0;
             xdeg = 0;
@@ -170,10 +172,10 @@
             bodies = [];
             for (var i = 50; i--;) {
                 //bodies[i] = {0:[-300 + randInt(300), -300 + randInt(300), -100 + randInt(100)], c:'rgb(' + (125 + randInt(125)) + ',' + (125 + randInt(125)) + ',' + (125 + randInt(125)) + ')', np:[], scale:0, i:i};
-                bodies[i] = {0:[100*Math.sin(i/50*12), 100*Math.cos(i/50*12), i*8-200], c:'rgb(' + (125 + randInt(125)) + ',' + (125 + randInt(125)) + ',' + (125 + randInt(125)) + ')', np:[], scale:0, i:i};
+                bodies[i] = {0:[10000*Math.sin(i/50*12), 10000*Math.cos(i/50*12), (i*8-200) * 100], c:'rgb(' + (125 + randInt(125)) + ',' + (125 + randInt(125)) + ',' + (125 + randInt(125)) + ')', np:[], scale:0, i:i};
             }
             bodies[bodies.length] = {0:[0,0,0], c:'rgb(255,255,255)', np:[], scale:0, i:100};
-            bodies[bodies.length] = {0:[0,0,100], c:'rgb(255,255,0)', np:[], scale:0, i:100};
+            bodies[bodies.length] = {0:[0,0,10000], c:'rgb(255,255,0)', np:[], scale:0, i:100};
             pause = false;
             drawBodies(primary);
             document.onkeypress = pageEvents;
@@ -204,7 +206,7 @@
                 //var position = bodies[i][0].multiplyEach(xaxis).multiplyEach(yaxis).multiplyEach(zaxis);
                 //var position = bodies[i][0].transformAxes(xaxis, yaxis, zaxis);
                 //position = xaxis.multiply((position.dot(xaxis)) / xx).add(yaxis.multiply((position.dot(yaxis)) / yy)).add(zaxis.multiply((position.dot(zaxis)) / zz));
-                var scale = (1200+position[2]/*+zadd*/)/1200;
+                var scale = (120000+position[2]/*+zadd*/)/100000;
                 bodies[i].np = position;
                 bodies[i].scale = scale;
             }
@@ -214,7 +216,7 @@
                 var scale = bodies[i].scale;
                 if (scale > 0) {
                     position = position.scale(scale);
-                    var radius = 10/scale;
+                    var radius = 1000/scale;
                     var grad = primary.createRadialGradient(position[0]+600, position[1]+300, 0.1*radius/scale, position[0]+600, position[1]+300, radius);
                     grad.addColorStop(0, bodies[i].c);
                     grad.addColorStop(0.95, 'rgba(0,0,0,1.0)');
