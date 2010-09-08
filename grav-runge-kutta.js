@@ -7,7 +7,6 @@
  * Some Utility Functions
  */
 function debug(e) {
-    return;
     if (window.console && console.log) {
         // Firebug
         return console.log(e);
@@ -37,32 +36,32 @@ function getWidth() {
  */
 Array.prototype.add = function(addarray) {
     //return [this[0] + addarray[0], this[1] + addarray[1], (this[2] || 0) + (addarray[2] || 0)];
-    return [this[0] + addarray[0], this[1] + addarray[1], this[2] + addarray[2]];
+    return [this[0] + addarray[0], this[1] + addarray[1]];
 }
 Array.prototype.subtract = function(subarray) {
     //return [this[0] - subarray[0], this[1] - subarray[1], (this[2] || 0) - (subarray[2] || 0)];
-    return [this[0] - subarray[0], this[1] - subarray[1], this[2] - subarray[2]];
+    return [this[0] - subarray[0], this[1] - subarray[1]];
 }
 Array.prototype.multiply = function(factor) {
     //return [this[0] * factor, this[1] * factor, (this[2] || 0) * factor];
-    return [this[0] * factor, this[1] * factor, this[2] * factor];
+    return [this[0] * factor, this[1] * factor];
 }
 Array.prototype.multiplyEach = function(multArray) {
-    return [this[0] * multArray[0], this[1] * multArray[1], (this[2] || 0) * (multArray[2] || 0)];
+    return [this[0] * multArray[0], this[1] * multArray[1]];
 }
 Array.prototype.dot = function(array2) {
     //return this[0]*array2[0] + this[1]*array2[1] + (this[2] || 0) * (array2[2] || 0);
-    return this[0]*array2[0] + this[1]*array2[1] + this[2]*array2[2];
+    return this[0]*array2[0] + this[1]*array2[1];
 }
 Array.prototype.distanceFrom = function(destArray) {
     //return Math.sqrt(Math.pow(this[0] - destArray[0], 2) + Math.pow(this[1] - destArray[1], 2) + Math.pow((this[2] || 0) - (destArray[2] || 0), 2));
-    return Math.sqrt(Math.pow(this[0] - destArray[0], 2) + Math.pow(this[1] - destArray[1], 2) + Math.pow(this[2] - destArray[2], 2));
+    return Math.sqrt(Math.pow(this[0] - destArray[0], 2) + Math.pow(this[1] - destArray[1], 2));
 }
 Array.prototype.toUnitVector = function() {
     //var mag = Math.sqrt((this[0] * this[0]) + (this[1] * this[1]) + ((this[2] * this[2]) || 0));
     //return [this[0] / mag, this[1] / mag, (this[2] || 0) / mag];
-    var mag = Math.sqrt((this[0] * this[0]) + (this[1] * this[1]) + (this[2] * this[2]));
-    return [this[0] / mag, this[1] / mag, this[2] / mag];
+    var mag = Math.sqrt((this[0] * this[0]) + (this[1] * this[1]));
+    return [this[0] / mag, this[1] / mag];
 }
 Array.prototype.rotate = function(angle) {
     // only used to initialize position of new bodies, see how to adapt to 3d
@@ -112,8 +111,6 @@ function addBodyClick(ev) {
 
 function handleArrowEvents(ev) {
     var ek = ev.which;
-    xdeg += (-(ek == 37) || +(ek == 39)) * 1/36;
-    ydeg += (-(ek == 40) || +(ek == 38)) * 1/36;
 }
 
 function pageEvents(ev) {
@@ -128,10 +125,6 @@ function pageEvents(ev) {
     willReset = ek == 111 || ek == 105 || ek == 115 || ek == 100 || ek == 119 || ek == 97 || ek == 107 || ek == 117 || ek == 106 || ek == 105;
 
     var scale = rectDimensions[2] / windowWidth;
-    debug(ek);
-    //zadd += (-(ek == 105) || +(ek == 107)) * 10 * scale;
-    if (ek == 37) {alert('thing');}
-    ydeg += (-(ek == 117) || +(ek == 106)) * 1/36;
     // increase/decrease trace length
     alpha *= (.5 * +(ek == 109)) || (2 * +(ek == 108)) || 1;
     if (alpha > 1) {
@@ -257,10 +250,85 @@ function cancelEvent(e)
 var gravConstant = 8.14496e-18; // Calculated so that an Earth at 1e-5 times its actual distance (with 1px = 1m) 
                                // has an orbital velocity such at its period is 60s (so G is in pks units) (with no trace).
                                // The "Sun" has its normal mass in kg.
+
+function symplectic(state, derivative, c, d, getEnergy, colliders1, colliders2) {
+    getEnergy = !!getEnergy;
+    var getColliders = !!colliders1;
+    var colliders = {};
+    var contact = false;
+    var totalEnergy = 0;
+    var bodiesLength = state.length;
+    for (var i = bodiesLength; i--;) {
+        var momentum = [];
+        if (!state[i].momentum) {
+            momentum = state[i].velocity.multiply(bodies[i].mass);
+        } else {
+            momentum = state[i].momentum;
+        }
+        derivative[i].position = state[i].position.add(momentum.multiply(c/bodies[i].mass));
+    }
+    for (var i = bodiesLength; i--;) {
+        for (var j = i; j--;) {
+            var diff = derivative[i].position.subtract(derivative[j].position);
+            if (getColliders) {
+                diff = state[i].position.subtract(state[j].position);
+                var radii = bodies[i].radius + bodies[j].radius;
+                if (diff.dot(diff) <= (radii*radii)) {
+                    if (!colliders[i]) {
+                        colliders[i] = [];
+                    }
+                    if (!colliders[j]) {
+                        colliders[j] = [];
+                    }
+                    if (!(colliders[i].indexOf(j) > 0 || colliders[j].indexOf(i) > 0)) {
+                        if (bodies[i].mass > bodies[j].mass) {
+                            colliders[i][colliders[i].length] = j;
+                        } else {
+                            colliders[j][colliders[j].length] = i;
+                        }
+                        contact = true;
+                    }
+                }
+            }
+
+            var dist = derivative[i].position.distanceFrom(derivative[j].position);
+            var mult = gravConstant / (dist * dist * dist);
+            var multj = -mult * bodies[j].mass;
+            var multi = mult * bodies[i].mass;
+            var momentumi = [];
+            if (!state[i].momentum) {
+                momentumi = state[i].velocity.multiply(bodies[i].mass);
+            } else {
+                momentumi = state[i].momentum;
+            }
+            var momentumj = [];
+            if (!state[j].momentum) {
+                momentumj = state[j].velocity.multiply(bodies[j].mass);
+            } else {
+                momentumj = state[j].momentum;
+            }
+            derivative[i].momentum = momentumi.subtract(diff.multiply(multi * d));
+            derivative[j].momentum = momentumj.subtract(diff.multiply(multj * d));
+            if (getEnergy) {
+                totalEnergy -= (gravConstant * bodies[j].mass * bodies[i].mass) / state[i].position.distanceFrom(state[j].position);
+            }
+        }
+    }
+
+    if (contact) {
+	for (var first in colliders) {
+            colliders1[colliders1.length] = +first;
+            colliders2[colliders2.length] = colliders[first];
+	}
+    }
+    return totalEnergy;
+}
+
 function derivatives(state, derivative, getEnergy, colliders1, colliders2) {
     getEnergy = !!getEnergy;
-    getColliders = !!colliders1;
-    colliders = {contact:0};
+    var getColliders = !!colliders1;
+    var colliders = {};
+    var contact = false;
     var totalEnergy = 0;
     // takes a state array, gets the derivatives of the state and stores in derivative
     var bodiesLength = state.length;
@@ -270,7 +338,6 @@ function derivatives(state, derivative, getEnergy, colliders1, colliders2) {
     for (var i = bodiesLength; i--;) {
         for (var j = i; j--;) {
             var diff = state[i].position.subtract(state[j].position);
-            debug('Diff: ' + diff.toString());
 	    if (getColliders) {
 		var radii = bodies[i].radius + bodies[j].radius;
 		if (diff.dot(diff) <= (radii*radii)) {
@@ -289,31 +356,25 @@ function derivatives(state, derivative, getEnergy, colliders1, colliders2) {
                         } else {
                             colliders[j][colliders[j].length] = i;
                         }
-                        colliders.contact++;
+                        contact = true;
                     }
 		}
 	    }
             var dist = state[i].position.distanceFrom(state[j].position)
-            debug('Dist: ' + dist);
             var mult = gravConstant / (dist * dist * dist);
-            debug('Mult: ' + mult);
             var multi = -mult * bodies[j].mass;
             var multj = mult * bodies[i].mass;
             derivative[i].velocity = derivative[i].velocity.add(diff.multiply(multi));
-            debug('Derivative I: ' + derivative[i].velocity.toString());
             derivative[j].velocity = derivative[j].velocity.add(diff.multiply(multj));
-            debug('Derivative J: ' + derivative[j].velocity.toString());
             if (getEnergy) {
                 totalEnergy -= (gravConstant * bodies[j].mass * bodies[i].mass) / dist;
             }
         }
     }
-    if (colliders.contact > 0) {
+    if (contact) {
 	for (var first in colliders) {
-	    if (first != 'contact') {
-		colliders1[colliders1.length] = +first;
-	        colliders2[colliders2.length] = colliders[first];
-	    }
+            colliders1[colliders1.length] = +first;
+            colliders2[colliders2.length] = colliders[first];
 	}
     }
     return totalEnergy;
@@ -321,6 +382,7 @@ function derivatives(state, derivative, getEnergy, colliders1, colliders2) {
 
 function calculateOrbit() {
     var bodiesLength = bodies.length;
+    /*
     // RK4 derivatives and intermediate
     // This RK4 method adapted from the program Planets by Yaron Minsky (planets.homedns.org)
     var derivative1 = [];
@@ -331,11 +393,11 @@ function calculateOrbit() {
     var hh = 0.5; //rk4 half timestep
     var h6 = 1/6;  //rk4 1/6 timestep
     for (var i = bodiesLength; i--;) {
-        derivative1[i] = {position:[0,0,0], velocity:[0,0,0]};
-        derivative2[i] = {position:[0,0,0], velocity:[0,0,0]};
-        derivative3[i] = {position:[0,0,0], velocity:[0,0,0]};
-        derivative4[i] = {position:[0,0,0], velocity:[0,0,0]};
-        yt[i] = {position:[0,0,0], velocity:[0,0,0]};
+        derivative1[i] = {position:[0,0], velocity:[0,0]};
+        derivative2[i] = {position:[0,0], velocity:[0,0]};
+        derivative3[i] = {position:[0,0], velocity:[0,0]};
+        derivative4[i] = {position:[0,0], velocity:[0,0]};
+        yt[i] = {position:[0,0], velocity:[0,0]};
     }
     var massiveColliders = [];
     var smallColliders = [];
@@ -345,20 +407,16 @@ function calculateOrbit() {
     } else {
         energy = derivatives(bodies, derivative1, true);
     }
-    debug(bodies[0].position.toString());
-    //energyText.firstChild.textContent = 'U: ' + energy;
     for (var i = bodiesLength; i--;) {
         yt[i].position = bodies[i].position.add(derivative1[i].position.multiply(hh));
         yt[i].velocity = bodies[i].velocity.add(derivative1[i].velocity.multiply(hh));
     }
     derivatives(yt, derivative2); // compute the second derivative for rk4 using the position and velocity updated from first derivative
-    debug(bodies[0].position.toString());
     for (var i = bodiesLength; i--;) {
         yt[i].position = bodies[i].position.add(derivative2[i].position.multiply(hh));
         yt[i].velocity = bodies[i].velocity.add(derivative2[i].velocity.multiply(hh));
     }
     derivatives(yt, derivative3);
-    debug(bodies[0].position.toString());
     for (var i = bodiesLength; i--;) {
         yt[i].position = bodies[i].position.add(derivative3[i].position);
         yt[i].velocity = bodies[i].velocity.add(derivative3[i].velocity);
@@ -366,7 +424,29 @@ function calculateOrbit() {
         derivative3[i].velocity = derivative3[i].velocity.add(derivative2[i].velocity);
     }
     derivatives(yt, derivative4);
-    debug(bodies[0].position.toString());
+    */
+    // Symplectic Integration
+    // This symplectic integrator based on method outlined in "Symplectic Integrators and their Application to Dynamical Astronomy"
+    // by Hiroshi Kinoshita, Haruo Yoshida, and Hiroshi Nakai (1990)
+    var derivative1 = [];
+    var derivative2 = [];
+    var derivative3 = [];
+    for (var i = bodiesLength; i--;) {
+        derivative1[i] = {position:[0,0], momentum:[0,0]};
+        derivative2[i] = {position:[0,0], momentum:[0,0]};
+        derivative3[i] = {position:[0,0], momentum:[0,0]};
+    }
+    var massiveColliders = [];
+    var smallColliders = [];
+    var energy;
+    var beta = Math.pow(2, 1/3);
+    if (isBounce) {
+        energy = symplectic(bodies, derivative1, 1/(2*(2-beta)), 1/(2-beta), true, massiveColliders, smallColliders);
+    } else {
+        energy = symplectic(bodies, derivative1, 1/(2*(2-beta)), 1/(2-beta), true);
+    }
+    symplectic(derivative1, derivative2, (1-beta)/(2*(2-beta)), -beta/(2-beta));
+    symplectic(derivative2, derivative3, (1-beta)/(2*(2-beta)), 1/(2-beta));
     if (alpha >= 0.001) {
         paper.fillStyle = 'rgba(0,0,0,' + alpha + ')';
         paper.fillRect(-rectDimensions[0], -rectDimensions[1], rectDimensions[2], rectDimensions[3]);
@@ -437,52 +517,18 @@ function calculateOrbit() {
         }
     }
     bodiesLength = bodies.length;
-    debug(bodies[0].position.toString());
-    debug('------------------------------');
-    debug(derivative1);
-    debug(derivative2);
-    debug(derivative3);
-    debug(derivative4);
     for (var i = bodiesLength; i--;) {
         var firstPosition = bodies[i].position;
+        /*
         bodies[i].position = bodies[i].position.add((derivative1[i].position.add(derivative4[i].position).add(derivative3[i].position.multiply(2))).multiply(h6));
         bodies[i].velocity = bodies[i].velocity.add((derivative1[i].velocity.add(derivative4[i].velocity).add(derivative3[i].velocity.multiply(2))).multiply(h6));
+        */
+        bodies[i].position = derivative3[i].position.add(derivative3[i].momentum.multiply(1/(2*bodies[i].mass*(2-beta))));
+        bodies[i].velocity = derivative3[i].momentum.multiply(1/(bodies[i].mass));
         energy += .5 * bodies[i].mass * bodies[i].velocity.dot(bodies[i].velocity);
-        /*------------------------------*/
-        if (i == 0) {debug(bodies[i].position.toString());}
-        var position = bodies[i].position.slice();
-        var xd = position[0];
-        var yd = position[1];
-        var zd = position[2];
-        if (i == 0) {debug(position.toString());}
-        var zx = xd * Math.cos(zdeg) - yd * Math.sin(zdeg) - xd;
-        var zy = xd * Math.sin(zdeg) + yd * Math.cos(zdeg) - yd;
-        var yx = (xd+zx) * Math.cos(ydeg) - zd * Math.sin(ydeg) - (xd+zx);
-        var yz = (xd+zx) * Math.sin(ydeg) + zd * Math.cos(ydeg) - zd;
-        var xy = (yd+zy) * Math.cos(xdeg) - (zd+yz) * Math.sin(xdeg) - (yd+zy);
-        var xz = (yd+zy) * Math.sin(xdeg) + (zd+yz) * Math.cos(xdeg) - (zd+yz);
-        var offset = [yx+zx, zy+xy, xz+yz];
-        position = position.add(offset).add([xadd,yadd,zadd]);
-        bodies[i].adjustedPosition = position;
-        /*
         drawBody(bodies[i].position[0], bodies[i].position[1], bodies[i].radius, bodies[i].color, paper);
         if (alpha < 1) {
             drawLine(bodies[i].position[0], bodies[i].position[1], firstPosition[0], firstPosition[1], bodies[i].radius, bodies[i].color, paper);
-        }
-        */
-    }
-    bodies.sort(function(a,b) {return a.adjustedPosition[2]-b.adjustedPosition[2];});
-    for (var i = bodies.length; i--;) {
-        var position = bodies[i].adjustedPosition;
-        var scale = rectDimensions[3]/(rectDimensions[3]+position[2]);
-        if (scale > 0) {
-            position = position.multiply(scale);
-            var radius = bodies[i].radius * scale;
-            var grad = paper.createRadialGradient(position[0], position[1], 0.1*radius*scale, position[0], position[1], radius);
-            grad.addColorStop(0, bodies[i].color);
-            grad.addColorStop(0.95, 'rgba(0,0,0,1.0)');
-            grad.addColorStop(1, 'rgba(0,0,0,0.0)');
-            drawBody(position[0], position[1], radius, grad, paper);
         }
     }
     energy = '' + energy;
@@ -497,7 +543,6 @@ function calculateOrbit() {
         bodyCount = bodies.length;
         document.getElementById('bodyCount').innerHTML = 'There are ' + bodyCount + ' bodies.';
     }
-    //ydeg += Math.PI / 3600;
     if (!isPaused) {
         setTimeout(calculateOrbit, 16);
     }
@@ -509,7 +554,7 @@ function addBody(x, y, newMass, randomOrientation) {
     if (newRadius < 6000) {
 	newRadius = 6000;
     }
-    var newPosition = [x, y, 0];
+    var newPosition = [x, y];
     var velocity = 0;
     var bodiesLength = bodies.length;
     if (bodiesLength > 0) {
@@ -532,14 +577,13 @@ function addBody(x, y, newMass, randomOrientation) {
         // from the most massive body to get an orbital velocity vector relative to COM
         velocity = mostMassiveBody.position.subtract(newPosition).toUnitVector().rotate(-Math.PI / 2).multiply(Math.sqrt((gravConstant * mostMassiveBody.mass) / mostMassiveBody.position.distanceFrom(newPosition))).add(mostMassiveBody.velocity);
     } else {
-        velocity = [0,0,0];
+        velocity = [0,0];
     }
     if (typeof(randomOrientation) != 'undefined' && randomOrientation == true) {
         velocity = velocity.rotate(2*Math.PI*Math.random());
     }
-    velocity = [velocity[0], velocity[1], 0];
     var color = 'rgb(' + (127 + randInt(127)) + ',' + (127 + randInt(127)) + ',' + (127 + randInt(127)) + ')';
-    bodies[bodies.length] = {mass: newMass, velocity: velocity, radius: newRadius, position: newPosition, color:color, adjustedPosition:[]};
+    bodies[bodies.length] = {mass: newMass, velocity: velocity, radius: newRadius, position: newPosition, color:color};
     if (isPaused) {
         drawBody(x, y, newRadius, color, paper);
     }
@@ -717,18 +761,16 @@ function loadBodies(id) {
         case 1:
             // two-body system
             bodies = [{
-                velocity: [0, 0, 1009.01932588033218502780],
-                position: [500000, 300000, 0],
+                velocity: [0, 1009.01932588033218502780],
+                position: [500000, 300000],
                 radius: 10000,
                 mass: 1e29,
-                adjustedPosition: [],
                 color: '#ff0'},
             {
-                velocity: [0, 0, -1009.01932588033218502780],
-                position: [900000, 300000, 0],
+                velocity: [0, -1009.01932588033218502780],
+                position: [900000, 300000],
                 radius: 10000,
                 mass: 1e29,
-                adjustedPosition: [],
                 color: '#ff0'}, ];
             break;
         case 2:
@@ -899,77 +941,65 @@ function loadBodies(id) {
 // Pyramid constructed by setting a bottom row of bodies aligned on the x-axis,
 // rotating a radius vector [0, r] for bodies of radius r by -Math.PI / 6, multiplying 2,
 // then adding the new vector to the position vector of a body, stacking bodies as appropriate
-                 {velocity: [0, 0, 0],
-                 position: [200000, 300000, 0],
+                 {velocity: [0, 0],
+                 position: [200000, 300000],
                  radius:27000,
                  mass:3e28,
                  color: '#f00'},
 
-                 {velocity: [0, 0, 0],
-                 position: [254000, 300000, 0],
+                 {velocity: [0, 0],
+                 position: [254000, 300000],
                  radius:27000,
                  mass:3e28,
                  color: '#f00'},
 
-                 {velocity: [0, 0, 0],
-                 position: [308000, 393530.7436087194, 0],
+                 {velocity: [0, 0],
+                 position: [308000, 393530.7436087194],
                  radius:27000,
                  mass:3e28,
                  color: '#ff0'},
 
-                 {velocity: [0, 0, 0],
-                 position: [254000, 393530.7436087194, 0],
+                 {velocity: [0, 0],
+                 position: [254000, 393530.7436087194],
                  radius:27000,
                  mass:3e28,
                  color: '#ff0'},
 
-                 {velocity: [0, 0, 0],
-                 position: [227000, 346765.3718043597, 0],
+                 {velocity: [0, 0],
+                 position: [227000, 346765.3718043597],
                  radius:27000,
                  mass:3e28,
                  color: '#ff0'},
 
-                 {velocity: [0, 0, 0],
-                 position: [281000, 346765.3718043597, 0],
+                 {velocity: [0, 0],
+                 position: [281000, 346765.3718043597],
                  radius:27000,
                  mass:3e28,
                  color: '#ff0'},
 
-                 {velocity: [0, 0, 0],
-                 position: [281000, 440296.1154130791, 0],
+                 {velocity: [0, 0],
+                 position: [281000, 440296.1154130791],
                  radius:27000,
                  mass:3e28,
                  color: '#0ff'},
 
-                 {velocity: [0, 0, 0],
-                 position: [335000, 346765.3718043597, 0],
+                 {velocity: [0, 0],
+                 position: [335000, 346765.3718043597],
                  radius:27000,
                  mass:3e28,
                  color: '#ff0'},
 
-                 {velocity: [0, 0, 0],
-                 position: [308000, 300000, 0],
+                 {velocity: [0, 0],
+                 position: [308000, 300000],
                  radius:27000,
                  mass:3e28,
                  color: '#f00'},
 
-                 {velocity: [0, 0, 0],
-                 position: [362000, 300000, 0],
+                 {velocity: [0, 0],
+                 position: [362000, 300000],
                  radius:27000,
                  mass:3e28,
                  color: '#f00'},
-
-                 {velocity: [0, 0, 0],
-                 position: [362000, 300000, 300000],
-                 radius:7000,
-                 mass:3e-28,
-                 color: '#f9f'},
-
-                 {velocity: [0, 0, 0],
-                 position: [362000, 300000, -300000],
-                 radius:7000,
-                 mass:3e-28,
-                 color: '#f9f'},
             ];
             break;
         case 10:
@@ -1013,34 +1043,28 @@ function loadBodies(id) {
             break;
         case 11:
             bodies = [
-                 {velocity: [0, 0, 0],
-                 position: [100000, 300000, 0],
+                 {velocity: [0, 0],
+                 position: [100000, 300000],
                  radius:27000,
                  mass:3e28,
                  color: '#f00'},
 
-                 {velocity: [0, 0, 0],
-                 position: [154000, 300000, 0],
+                 {velocity: [0, 0],
+                 position: [154000, 300000],
                  radius:27000,
                  mass:3e28,
                  color: '#f00'},
 
 
-                 {velocity: [0, 0, 0],
-                 position: [208000, 300000, 0],
+                 {velocity: [0, 0],
+                 position: [208000, 300000],
                  radius:27000,
                  mass:3e28,
                  color: '#f00'},
 
-                 {velocity: [0, 0, 0],
-                 position: [1000000, 300000, 0], // try at 11
+                 {velocity: [0, 0],
+                 position: [1000000, 300000], // try at 11
                  radius:27000,
-                 mass:3e28,
-                 color: '#ff0'},
-
-                 {velocity: [0, 0, 0],
-                 position: [1000000, 300000, -600000], // try at 11
-                 radius:7000,
                  mass:3e28,
                  color: '#ff0'},
             ];
@@ -1072,12 +1096,6 @@ window.onload = function() {
     bodyCount = 0;
     alpha = 1;
     counts = 0;
-    xdeg = 0;
-    ydeg = 0;
-    zdeg = 0;
-    zadd = 0;
-    yadd = 0;
-    xadd = 0;
     var canvas = document.getElementById('canvas');
     windowWidth = getWidth();
     windowHeight = getHeight();
@@ -1108,9 +1126,5 @@ window.onload = function() {
     } else {
         loadBodies(11);
     }
-    debug(bodies[0].position.toString());
-    debug(bodies[1].position.toString());
-    debug(bodies[2].position.toString());
-    debug(bodies[3].position.toString());
     calculateOrbit();
 };

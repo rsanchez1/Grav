@@ -67,7 +67,7 @@ Array.prototype.rotate = function(angle) {
     // only used to initialize position of new bodies, see how to adapt to 3d
     var cosangle = Math.cos(angle);
     var sinangle = Math.sin(angle);
-    return [(cosangle * this[0]) + (-sinangle * this[1]), (sinangle * this[0]) + (cosangle * this[1])];
+    return [(cosangle * this[0]) + (-sinangle * this[1]), (sinangle * this[0]) + (cosangle * this[1]), this[2]];
 }
 /*
  * Drawing Functions
@@ -106,8 +106,8 @@ function addBodyClick(ev) {
     if (!!ev.shiftKey) {
         randomOrientation = true;
     }
-    var scale = Math.abs(120000/(120000+zadd));
-    addBody((x * (windowWidth) / scale) - xadd, (y * (windowHeight / scale)) - yadd, +document.getElementById('newmass').value, randomOrientation);
+    var scale = Math.abs(600/(600+zadd));
+    addBody((x / scale) - xadd, (y / scale) - yadd, +document.getElementById('newmass').value, randomOrientation);
 }
 
 function handleArrowEvents(ev) {
@@ -119,13 +119,11 @@ function handleArrowEvents(ev) {
 function pageEvents(ev) {
     var ek = ev.which;
     var willReset = false;
-    var scale = Math.abs((120000)/(120000+zadd));
-    debug(scale);
-    debug((-(ek == 100) || +(ek == 97)) / (scale * 30));
+    var scale = Math.abs((600)/(600+zadd));
     // transform the canvas based on movement/zoom
-    xadd += windowWidth * ((-(ek == 100) || +(ek == 97)) / (scale * 30));
+    xadd += windowWidth * (((-(ek == 105) || +(ek == 111)) * (45/(900*scale))) || ((-(ek == 100) || +(ek == 97)) / (scale * 30)));
     //rectDimensions[0] += rectDimensions[2] * ((-(ek == 105) * (45 / 990)) || (+(ek == 111) * (45 / 900)) || ((-(ek == 100) || (+(ek == 97))) * (1 / 30)));
-    yadd += windowHeight * ((-(ek == 115) || +(ek == 119)) / (scale * 30));
+    yadd += windowHeight * (((-(ek == 105) || +(ek == 111)) * (45/(900*scale))) || ((-(ek == 115) || +(ek == 119)) / (scale * 30)));
     var add = .1*zadd;
     if (add < 1000) {add = 1000;}
     zadd += (-(ek == 105) || +(ek == 111)) * add;
@@ -209,7 +207,7 @@ function resetCanvas(willReset) {
     */
     document.getElementById('viewx').innerHTML = 'X: ' + parseInt(xadd, 10);
     document.getElementById('viewy').innerHTML = 'Y: ' + parseInt(yadd, 10);
-    var scale = Math.abs((120000)/(120000+zadd));
+    var scale = Math.abs((600)/(600+zadd));
     document.getElementById('viewidth').innerHTML = 'Width: ' + parseInt(windowWidth/scale, 10);
     document.getElementById('viewheight').innerHTML = 'Height: ' + parseInt(windowHeight/scale, 10);
 }
@@ -441,6 +439,10 @@ function calculateOrbit() {
     //debug(derivative2);
     //debug(derivative3);
     //debug(derivative4);
+    var scale = Math.abs((600)/(600+zadd));
+    var pivx = /*(xadd + (windowWidth / scale)) / 2*/0;
+    var pivy = /*(yadd + (windowHeight / scale)) / 2*/0;
+    var pivz = /*zadd / 4*/0;
     for (var i = bodiesLength; i--;) {
         var firstPosition = bodies[i].position;
         bodies[i].position = bodies[i].position.add((derivative1[i].position.add(derivative4[i].position).add(derivative3[i].position.multiply(2))).multiply(h6));
@@ -449,9 +451,9 @@ function calculateOrbit() {
         /*------------------------------*/
         //if (i == 0) {debug(bodies[i].position.toString());}
         var position = bodies[i].position.slice();
-        var xd = position[0];
-        var yd = position[1];
-        var zd = position[2];
+        var xd = position[0] - pivx;
+        var yd = position[1] - pivy;
+        var zd = position[2] - pivz;
         //if (i == 0) {debug(position.toString());}
         var zx = xd * Math.cos(zdeg) - yd * Math.sin(zdeg) - xd;
         var zy = xd * Math.sin(zdeg) + yd * Math.cos(zdeg) - yd;
@@ -475,7 +477,7 @@ function calculateOrbit() {
     bodies.sort(function(a,b) {return a.adjustedPosition[2]-b.adjustedPosition[2];});
     for (var i = bodies.length; i--;) {
         var position = bodies[i].adjustedPosition;
-        var scale = 120000/(120000+position[2]);
+        var scale = 600/(600+position[2]);
         if (scale > 0) {
             position = position.multiply(scale);
             var radius = bodies[i].radius * scale;
@@ -510,8 +512,8 @@ function addBody(x, y, newMass, randomOrientation) {
     if (newRadius < 6000) {
 	newRadius = 6000;
     }
-    var newPosition = [x, y, 0];
-    var velocity = 0;
+    var newPosition = [x, y, zadd];
+    var velocity = [0, 0, 0];
     var bodiesLength = bodies.length;
     if (bodiesLength > 0) {
         // just using the most massive body (body exerting greatest force), instead of COM, for simplicity
@@ -538,7 +540,10 @@ function addBody(x, y, newMass, randomOrientation) {
     if (typeof(randomOrientation) != 'undefined' && randomOrientation == true) {
         velocity = velocity.rotate(2*Math.PI*Math.random());
     }
-    velocity = [velocity[0], velocity[1], 0];
+    debug(velocity);
+    if (velocity.length == 2) {
+        velocity = [velocity[0], velocity[1], 0];
+    }
     var color = 'rgb(' + (127 + randInt(127)) + ',' + (127 + randInt(127)) + ',' + (127 + randInt(127)) + ')';
     bodies[bodies.length] = {mass: newMass, velocity: velocity, radius: newRadius, position: newPosition, color:color, adjustedPosition:[]};
     if (isPaused) {
@@ -565,41 +570,42 @@ function loadBodies(id) {
             // Moons have to be given retrograde orbits for stability
             // Moons that are interesting but unstable: Io, Titania
             bodies = [
-                 {velocity: [0, 0], // Sun
-                 position: [500000, 300000],
+                 {velocity: [0, 0, 0], // Sun
+                 position: [500000, 300000, 0],
                  radius:6960,
                  mass:1.9889e30,
                  color:'#ff0'},
 
-                 {velocity: [0, 5289.007336], // Mercury
-                 position: [1079100, 300000],
+                 {velocity: [0, 5289.007336, 0], // Mercury
+                 position: [1079100, 300000, 0],
                  radius: 3000,
                  mass: 3.3022e23,
                  color:'#ddd'},
                  
-                 {velocity: [0, 3869.165024], // Venus
-                 position: [1582100, 300000],
+                 {velocity: [0, 3869.165024, 0], // Venus
+                 position: [1582100, 300000, 0],
                  radius: 3000,
                  mass: 4.8685e24,
                  color:'#aac'},
 
-                 {velocity: [0, 3290.6762], // Earth
-                 position: [1996000, 300000],
+                 {velocity: [0, 3290.6762, 0], // Earth
+                 position: [1996000, 300000, 0],
                  radius: 3000,
                  mass: 5.9736e24,
                  color:'#99f'},
 
-                 {velocity: [0, 3178.17145], // Moon
-                 position: [1999844, 300000],
+                 {velocity: [0, 3178.17145, 0], // Moon
+                 position: [1999844, 300000, 0],
                  radius: 3000,
                  mass: 7.3477e22,
                  color:'#ddd'},
 
-                 {velocity: [0, 2665.880512], // Mars
-                 position: [2779400, 300000],
+                 {velocity: [0, 2665.880512, 0], // Mars
+                 position: [2779400, 300000, 0],
                  radius: 3000,
                  mass: 6.4185e23,
                  color:'#f99'},
+                 /*
 
                  {velocity: [0, 1442.473015], // Jupiter
                  position: [8285500, 300000],
@@ -638,6 +644,7 @@ function loadBodies(id) {
                  mass: 3.894e22,
                  color:'#fff'},
 */
+/*
                  {velocity: [0, 1063.083192], // Saturn
                  position: [14834000, 300000],
                  radius: 3000,
@@ -663,6 +670,7 @@ function loadBodies(id) {
                  mass: 4.3221e22
                  color:'#fff'},
 */
+/*
                  {velocity: [0, 750.4187296], // Uranus
                  position: [29267000, 300000],
                  radius: 3000,
@@ -688,6 +696,7 @@ function loadBodies(id) {
                  mass: 1.0022e19
                  color:'#fff'},
 */
+/*
                  {velocity: [0, 599.7644084], // Neptune
                  position: [45534000, 300000],
                  radius: 3000,
@@ -966,6 +975,11 @@ function loadBodies(id) {
                  mass:3e-58,
                  color: '#fcf'},
 
+                 {velocity: [0, 0, 0],
+                 position: [362000, 300000, 1000000],
+                 radius:7000,
+                 mass:3e-58,
+                 color: '#fcf'},
             ];
             break;
         case 10:
@@ -1071,9 +1085,12 @@ window.onload = function() {
     xdeg = 0;
     ydeg = 0;
     zdeg = 0;
-    zadd = 100000000;
+    zadd = 500000;
     yadd = 0;
     xadd = 0;
+    camx = 0;
+    camy = 0;
+    camz = 500000;
     var canvas = document.getElementById('canvas');
     windowWidth = getWidth();
     windowHeight = getHeight();
