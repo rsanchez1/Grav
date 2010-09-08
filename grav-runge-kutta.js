@@ -261,11 +261,11 @@ function symplectic(state, derivative, c, d, getEnergy, colliders1, colliders2) 
     for (var i = bodiesLength; i--;) {
         var momentum = [];
         if (!state[i].momentum) {
-            momentum = state[i].velocity.multiply(bodies[i].mass);
+            momentum = state[i].velocity;
         } else {
             momentum = state[i].momentum;
         }
-        derivative[i].position = state[i].position.add(momentum.multiply(c/bodies[i].mass));
+        derivative[i].position = state[i].position.add(momentum.multiply(c));
     }
     for (var i = bodiesLength; i--;) {
         for (var j = i; j--;) {
@@ -297,13 +297,13 @@ function symplectic(state, derivative, c, d, getEnergy, colliders1, colliders2) 
             var multi = mult * bodies[i].mass;
             var momentumi = [];
             if (!state[i].momentum) {
-                momentumi = state[i].velocity.multiply(bodies[i].mass);
+                momentumi = state[i].velocity;
             } else {
                 momentumi = state[i].momentum;
             }
             var momentumj = [];
             if (!state[j].momentum) {
-                momentumj = state[j].velocity.multiply(bodies[j].mass);
+                momentumj = state[j].velocity;
             } else {
                 momentumj = state[j].momentum;
             }
@@ -523,8 +523,8 @@ function calculateOrbit() {
         bodies[i].position = bodies[i].position.add((derivative1[i].position.add(derivative4[i].position).add(derivative3[i].position.multiply(2))).multiply(h6));
         bodies[i].velocity = bodies[i].velocity.add((derivative1[i].velocity.add(derivative4[i].velocity).add(derivative3[i].velocity.multiply(2))).multiply(h6));
         */
-        bodies[i].position = derivative3[i].position.add(derivative3[i].momentum.multiply(1/(2*bodies[i].mass*(2-beta))));
-        bodies[i].velocity = derivative3[i].momentum.multiply(1/(bodies[i].mass));
+        bodies[i].position = derivative3[i].position.add(derivative3[i].momentum.multiply(1/(2*(2-beta))));
+        bodies[i].velocity = derivative3[i].momentum;
         energy += .5 * bodies[i].mass * bodies[i].velocity.dot(bodies[i].velocity);
         drawBody(bodies[i].position[0], bodies[i].position[1], bodies[i].radius, bodies[i].color, paper);
         if (alpha < 1) {
