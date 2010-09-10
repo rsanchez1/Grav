@@ -263,7 +263,7 @@ function symplectic(state, derivative, c, d, getEnergy, colliders1, colliders2) 
         if (!state[i].momentum) {
             momentum = state[i].velocity;
         } else {
-            momentum = state[i].momentum;
+            momentum = state[i].momentum.multiply(1/bodies[i].mass);
         }
         derivative[i].position = state[i].position.add(momentum.multiply(c));
     }
@@ -299,13 +299,13 @@ function symplectic(state, derivative, c, d, getEnergy, colliders1, colliders2) 
             if (!state[i].momentum) {
                 momentumi = state[i].velocity;
             } else {
-                momentumi = state[i].momentum;
+                momentumi = state[i].momentum.multiply(1/bodies[i].mass);
             }
             var momentumj = [];
             if (!state[j].momentum) {
                 momentumj = state[j].velocity;
             } else {
-                momentumj = state[j].momentum;
+                momentumj = state[j].momentum.multiply(1/bodies[j].mass);
             }
             derivative[i].momentum = derivative[i].momentum.add(momentumi.subtract(diff.multiply(multi * d)));
             derivative[j].momentum = derivative[j].momentum.add(momentumj.subtract(diff.multiply(multj * d)));
