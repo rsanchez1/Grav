@@ -261,11 +261,11 @@ function symplectic(state, derivative, c, d, getEnergy, colliders1, colliders2) 
     for (var i = bodiesLength; i--;) {
         var momentum = [];
         if (!state[i].momentum) {
-            momentum = state[i].velocity;
+            momentum = state[i].velocity.multiply(bodies[i].mass);
         } else {
-            momentum = state[i].momentum.multiply(1/bodies[i].mass);
+            momentum = state[i].momentum;
         }
-        derivative[i].position = state[i].position.add(momentum.multiply(c));
+        derivative[i].position = state[i].position.add(momentum.multiply(c/bodies[i].mass));
     }
     for (var i = bodiesLength; i--;) {
         for (var j = i; j--;) {
@@ -297,15 +297,15 @@ function symplectic(state, derivative, c, d, getEnergy, colliders1, colliders2) 
             var multi = mult * bodies[i].mass;
             var momentumi = [];
             if (!state[i].momentum) {
-                momentumi = state[i].velocity;
+                momentumi = state[i].velocity.multiply(bodies[i].mass);
             } else {
-                momentumi = state[i].momentum.multiply(1/bodies[i].mass);
+                momentumi = state[i].momentum;
             }
             var momentumj = [];
             if (!state[j].momentum) {
-                momentumj = state[j].velocity;
+                momentumj = state[j].velocity.multiply(bodies[j].mass);
             } else {
-                momentumj = state[j].momentum.multiply(1/bodies[j].mass);
+                momentumj = state[j].momentum;
             }
             derivative[i].momentum = derivative[i].momentum.add(momentumi.subtract(diff.multiply(multi * d)));
             derivative[j].momentum = derivative[j].momentum.add(momentumj.subtract(diff.multiply(multj * d)));
@@ -524,7 +524,7 @@ function calculateOrbit() {
         bodies[i].position = bodies[i].position.add((derivative1[i].position.add(derivative4[i].position).add(derivative3[i].position.multiply(2))).multiply(h6));
         bodies[i].velocity = bodies[i].velocity.add((derivative1[i].velocity.add(derivative4[i].velocity).add(derivative3[i].velocity.multiply(2))).multiply(h6));
         */
-        bodies[i].position = derivative3[i].position.add(derivative3[i].momentum.multiply(1/(2*(2-beta))));
+        bodies[i].position = derivative3[i].position.add(derivative3[i].momentum.multiply(1/(2*bodies[i].mass*(2-beta))));
         bodies[i].velocity = derivative3[i].momentum.multiply(1/bodies[i].mass);
         /*
         bodies[i].position = derivative1[i].position;
