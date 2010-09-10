@@ -307,8 +307,8 @@ function symplectic(state, derivative, c, d, getEnergy, colliders1, colliders2) 
             } else {
                 momentumj = state[j].momentum;
             }
-            derivative[i].momentum = momentumi.subtract(diff.multiply(multi * d));
-            derivative[j].momentum = momentumj.subtract(diff.multiply(multj * d));
+            derivative[i].momentum = derivative[i].momentum.add(momentumi.subtract(diff.multiply(multi * d)));
+            derivative[j].momentum = derivative[j].momentum.add(momentumj.subtract(diff.multiply(multj * d)));
             if (getEnergy) {
                 totalEnergy -= (gravConstant * bodies[j].mass * bodies[i].mass) / state[i].position.distanceFrom(state[j].position);
             }
@@ -447,6 +447,7 @@ function calculateOrbit() {
     }
     symplectic(derivative1, derivative2, (1-beta)/(2*(2-beta)), -beta/(2-beta));
     symplectic(derivative2, derivative3, (1-beta)/(2*(2-beta)), 1/(2-beta));
+    //symplectic(bodies, derivative1, 1, 1, true, massiveColliders, smallColliders);
     if (alpha >= 0.001) {
         paper.fillStyle = 'rgba(0,0,0,' + alpha + ')';
         paper.fillRect(-rectDimensions[0], -rectDimensions[1], rectDimensions[2], rectDimensions[3]);
@@ -524,7 +525,11 @@ function calculateOrbit() {
         bodies[i].velocity = bodies[i].velocity.add((derivative1[i].velocity.add(derivative4[i].velocity).add(derivative3[i].velocity.multiply(2))).multiply(h6));
         */
         bodies[i].position = derivative3[i].position.add(derivative3[i].momentum.multiply(1/(2*(2-beta))));
-        bodies[i].velocity = derivative3[i].momentum;
+        bodies[i].velocity = derivative3[i].momentum.multiply(1/bodies[i].mass);
+        /*
+        bodies[i].position = derivative1[i].position;
+        bodies[i].velocity = derivative1[i].momentum.multiply(1/bodies[i].mass);
+        */
         energy += .5 * bodies[i].mass * bodies[i].velocity.dot(bodies[i].velocity);
         drawBody(bodies[i].position[0], bodies[i].position[1], bodies[i].radius, bodies[i].color, paper);
         if (alpha < 1) {
