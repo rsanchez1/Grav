@@ -259,6 +259,75 @@ function symplectic(state, derivative, c, d, getEnergy, colliders1, colliders2) 
     var totalEnergy = 0;
     var bodiesLength = state.length;
     for (var i = bodiesLength; i--;) {
+        if (c != 0) {
+            for (var j = i; j--;) {
+                var diff = state[i].position.subtract(state[j].position);
+                if (getColliders) {
+                    var radii = bodies[i].radius + bodies[j].radius;
+                    if (diff.dot(diff) <= (radii*radii)) {
+                        if (!colliders[i]) {
+                            colliders[i] = [];
+                        }
+                        if (!colliders[j]) {
+                            colliders[j] = [];
+                        }
+                        if (!(colliders[i].indexOf(j) > 0 || colliders[j].indexOf(i) > 0)) {
+                            if (bodies[i].mass > bodies[j].mass) {
+                                colliders[i][colliders[i].length] = j;
+                            } else {
+                                colliders[j][colliders[j].length] = i;
+                            }
+                            contact = true;
+                        }
+                    }
+                }
+                var dist = state[i].position.distanceFrom(state[j].position);
+                var mult = gravConstant / (dist * dist* dist);
+                var multj = -mult * bodies[j].mass;
+                var multi = mult * bodies[i].mass;
+
+                var momentumi = [];
+                if (!state[i].momentum) {
+                    momentumi = state[i].velocity.multiply(bodies[i].mass);
+                } else {
+                    momentumi = state[i].momentum;
+                }
+                var momentumj = [];
+                if (!state[j].momentum) {
+                    momentumj = state[j].velocity.multiply(bodies[j].mass);
+                } else {
+                    momentumj = state[j].momentum;
+                }
+                derivative[i].momentum = derivative[i].momentum.add(momentumi.subtract(diff.multiply(multi * c)));
+                derivative[j].momentum = derivative[j].momentum.add(momentumj.subtract(diff.multiply(multj * c)));
+                if (counts == 100) {
+                    debug("i: " + i);
+                    debug("j: " + j);
+                    debug(derivative[i].momentum);
+                    debug(derivative[j].momentum);
+                    debug(diff);
+                }
+
+                if (getEnergy) {
+                    totalEnergy -= (gravConstant * bodies[j].mass * bodies[i].mass) / state[i].position.distanceFrom(state[j].position);
+                }
+            }
+        } else {
+            var momentum = [];
+            if (!state[i].momentum) {
+                momentum = state[i].velocity.multiply(bodies[i].mass);
+            } else {
+                momentum = state[i].momentum;
+            }
+            derivative[i].momentum = momentum;
+        }
+    }
+
+    for (var i = bodiesLength; i--;) {
+        derivative[i].position = state[i].position.add(derivative[i].momentum.multiply(d));
+    }
+    /*
+    for (var i = bodiesLength; i--;) {
         var momentum = [];
         if (!state[i].momentum) {
             momentum = state[i].velocity.multiply(bodies[i].mass);
@@ -314,6 +383,7 @@ function symplectic(state, derivative, c, d, getEnergy, colliders1, colliders2) 
             }
         }
     }
+    */
 
     if (contact) {
 	for (var first in colliders) {
@@ -431,23 +501,34 @@ function calculateOrbit() {
     var derivative1 = [];
     var derivative2 = [];
     var derivative3 = [];
+    var derivative4 = [];
     for (var i = bodiesLength; i--;) {
         derivative1[i] = {position:[0,0], momentum:[0,0]};
         derivative2[i] = {position:[0,0], momentum:[0,0]};
         derivative3[i] = {position:[0,0], momentum:[0,0]};
+        derivative4[i] = {position:[0,0], momentum:[0,0]};
     }
     var massiveColliders = [];
     var smallColliders = [];
     var energy;
     var beta = Math.pow(2, 1/3);
+    var symInput = (beta + (1/beta) - 1) / 6;
     if (isBounce) {
-        energy = symplectic(bodies, derivative1, 1/(2*(2-beta)), 1/(2-beta), true, massiveColliders, smallColliders);
+        //energy = symplectic(bodies, derivative1, 1/(2*(2-beta)), 1/(2-beta), true, massiveColliders, smallColliders);
+        //energy = symplectic(bodies, derivative1, symInput + .5, (2*symInput) + 1, true, massiveColliders, smallColliders);
+        energy = symplectic(bodies, derivative1, 0, symInput + .5, true, massiveColliders, smallColliders);
     } else {
-        energy = symplectic(bodies, derivative1, 1/(2*(2-beta)), 1/(2-beta), true);
+        //energy = symplectic(bodies, derivative1, 1/(2*(2-beta)), 1/(2-beta), true);
+        //energy = symplectic(bodies, derivative1, symInput + .5, (2*symInput) + 1, true);
+        energy = symplectic(bodies, derivative1, 0, symInput + .5, true);
     }
+    /*
     symplectic(derivative1, derivative2, (1-beta)/(2*(2-beta)), -beta/(2-beta));
     symplectic(derivative2, derivative3, (1-beta)/(2*(2-beta)), 1/(2-beta));
-    //symplectic(bodies, derivative1, 1, 1, true, massiveColliders, smallColliders);
+    */
+    symplectic(derivative1, derivative2, (2*symInput) + 1, -symInput);
+    symplectic(derivative2, derivative3, (-4*symInput) - 1, -symInput);
+    symplectic(derivative3, derivative4, (2*symInput) + 1, symInput + .5);
     if (alpha >= 0.001) {
         paper.fillStyle = 'rgba(0,0,0,' + alpha + ')';
         paper.fillRect(-rectDimensions[0], -rectDimensions[1], rectDimensions[2], rectDimensions[3]);
@@ -524,12 +605,16 @@ function calculateOrbit() {
         bodies[i].position = bodies[i].position.add((derivative1[i].position.add(derivative4[i].position).add(derivative3[i].position.multiply(2))).multiply(h6));
         bodies[i].velocity = bodies[i].velocity.add((derivative1[i].velocity.add(derivative4[i].velocity).add(derivative3[i].velocity.multiply(2))).multiply(h6));
         */
+        /*
         bodies[i].position = derivative3[i].position.add(derivative3[i].momentum.multiply(1/(2*bodies[i].mass*(2-beta))));
         bodies[i].velocity = derivative3[i].momentum.multiply(1/bodies[i].mass);
+        */
         /*
         bodies[i].position = derivative1[i].position;
         bodies[i].velocity = derivative1[i].momentum.multiply(1/bodies[i].mass);
         */
+        bodies[i].position = derivative4[i].position;
+        bodies[i].velocity = derivative4[i].momentum.multiply(1/bodies[i].mass);
         energy += .5 * bodies[i].mass * bodies[i].velocity.dot(bodies[i].velocity);
         drawBody(bodies[i].position[0], bodies[i].position[1], bodies[i].radius, bodies[i].color, paper);
         if (alpha < 1) {
@@ -1053,6 +1138,7 @@ function loadBodies(id) {
                  radius:27000,
                  mass:3e28,
                  color: '#f00'},
+                 /*
 
                  {velocity: [0, 0],
                  position: [154000, 300000],
@@ -1066,6 +1152,7 @@ function loadBodies(id) {
                  radius:27000,
                  mass:3e28,
                  color: '#f00'},
+                 */
 
                  {velocity: [0, 0],
                  position: [1000000, 300000], // try at 11
