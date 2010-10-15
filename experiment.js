@@ -1066,16 +1066,6 @@ function loadBodies(id) {
 }
 
 window.onload = function() {
-    /*
-    var energyText = document.createElementNS(svgns, 'text');
-    energyText.setAttribute('x', 0);
-    energyText.setAttribute('y', 100000);
-    energyText.setAttribute('fill', 'white');
-    energyText.setAttribute('font-size', '100000px'); // textContent
-    energyText.setAttribute('font-family', 'Verdana');
-    energyText.appendChild(document.createTextNode('U: 0'));
-    paper.appendChild(energyText);
-    */
     isBounce = true;
     isPaused = false;
     antiFlicker = false;
