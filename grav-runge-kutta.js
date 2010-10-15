@@ -182,6 +182,7 @@ function resizeWindow() {
 }
 
 function resetCanvas(oldRect, willReset) {
+    /*
     var transition = document.getElementById('transition').getContext('2d');
     if (willReset) {
         if (antiFlicker || alpha < 1) {
@@ -203,6 +204,7 @@ function resetCanvas(oldRect, willReset) {
             drawBody(bodies[i].position[0], bodies[i].position[1], bodies[i].radius, bodies[i].color, paper);
         }
     }
+    */
     document.getElementById('viewx').innerHTML = 'X: ' + parseInt(rectDimensions[0], 10);
     document.getElementById('viewy').innerHTML = 'Y: ' + parseInt(rectDimensions[1], 10);
     document.getElementById('viewidth').innerHTML = 'Width: ' + parseInt(rectDimensions[2], 10);
@@ -452,7 +454,6 @@ function derivatives(state, derivative, getEnergy, colliders1, colliders2) {
 
 function calculateOrbit() {
     var bodiesLength = bodies.length;
-    /*
     // RK4 derivatives and intermediate
     // This RK4 method adapted from the program Planets by Yaron Minsky (planets.homedns.org)
     var derivative1 = [];
@@ -494,10 +495,10 @@ function calculateOrbit() {
         derivative3[i].velocity = derivative3[i].velocity.add(derivative2[i].velocity);
     }
     derivatives(yt, derivative4);
-    */
     // Symplectic Integration
     // This symplectic integrator based on method outlined in "Symplectic Integrators and their Application to Dynamical Astronomy"
     // by Hiroshi Kinoshita, Haruo Yoshida, and Hiroshi Nakai (1990)
+    /*
     var derivative1 = [];
     var derivative2 = [];
     var derivative3 = [];
@@ -526,9 +527,11 @@ function calculateOrbit() {
     symplectic(derivative1, derivative2, (1-beta)/(2*(2-beta)), -beta/(2-beta));
     symplectic(derivative2, derivative3, (1-beta)/(2*(2-beta)), 1/(2-beta));
     */
+    /*
     symplectic(derivative1, derivative2, (2*symInput) + 1, -symInput);
     symplectic(derivative2, derivative3, (-4*symInput) - 1, -symInput);
     symplectic(derivative3, derivative4, (2*symInput) + 1, symInput + .5);
+    */
     if (alpha >= 0.001) {
         paper.fillStyle = 'rgba(0,0,0,' + alpha + ')';
         paper.fillRect(-rectDimensions[0], -rectDimensions[1], rectDimensions[2], rectDimensions[3]);
@@ -599,12 +602,11 @@ function calculateOrbit() {
         }
     }
     bodiesLength = bodies.length;
+    var scale = rectDimensions[2] / windowWidth;
     for (var i = bodiesLength; i--;) {
         var firstPosition = bodies[i].position;
-        /*
         bodies[i].position = bodies[i].position.add((derivative1[i].position.add(derivative4[i].position).add(derivative3[i].position.multiply(2))).multiply(h6));
         bodies[i].velocity = bodies[i].velocity.add((derivative1[i].velocity.add(derivative4[i].velocity).add(derivative3[i].velocity.multiply(2))).multiply(h6));
-        */
         /*
         bodies[i].position = derivative3[i].position.add(derivative3[i].momentum.multiply(1/(2*bodies[i].mass*(2-beta))));
         bodies[i].velocity = derivative3[i].momentum.multiply(1/bodies[i].mass);
@@ -613,10 +615,14 @@ function calculateOrbit() {
         bodies[i].position = derivative1[i].position;
         bodies[i].velocity = derivative1[i].momentum.multiply(1/bodies[i].mass);
         */
+        /*
         bodies[i].position = derivative4[i].position;
         bodies[i].velocity = derivative4[i].momentum.multiply(1/bodies[i].mass);
+        */
         energy += .5 * bodies[i].mass * bodies[i].velocity.dot(bodies[i].velocity);
-        drawBody(bodies[i].position[0], bodies[i].position[1], bodies[i].radius, bodies[i].color, paper);
+        var radius = bodies[i].radius / scale;
+        var position = bodies[i].position.multiply(1/scale);
+        drawBody(position[0], position[1], radius, bodies[i].color, paper);
         if (alpha < 1) {
             drawLine(bodies[i].position[0], bodies[i].position[1], firstPosition[0], firstPosition[1], bodies[i].radius, bodies[i].color, paper);
         }
