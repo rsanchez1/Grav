@@ -532,10 +532,11 @@ function calculateOrbit() {
     symplectic(derivative2, derivative3, (-4*symInput) - 1, -symInput);
     symplectic(derivative3, derivative4, (2*symInput) + 1, symInput + .5);
     */
-    if (alpha >= 0.001) {
-        paper.fillStyle = 'rgba(0,0,0,' + alpha + ')';
+    //if (alpha >= 0.001) {
+        //paper.fillStyle = 'rgba(0,0,0,' + alpha + ')';
+        paper.fillStyle = 'rgb(0,0,0)';
         paper.fillRect(-rectDimensions[0], -rectDimensions[1], rectDimensions[2], rectDimensions[3]);
-    }
+    //}
     if (massiveColliders.length > 0) {
 	// get the new momentum for the massive body, and the new mass
         /*
@@ -623,9 +624,11 @@ function calculateOrbit() {
         var radius = bodies[i].radius / scale;
         var position = bodies[i].position.multiply(1/scale);
         drawBody(position[0], position[1], radius, bodies[i].color, paper);
+        /*
         if (alpha < 1) {
             drawLine(bodies[i].position[0], bodies[i].position[1], firstPosition[0], firstPosition[1], bodies[i].radius, bodies[i].color, paper);
         }
+        */
     }
     energy = '' + energy;
     var exponent = energy.split('e');
