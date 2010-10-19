@@ -535,7 +535,7 @@ function calculateOrbit() {
     //if (alpha >= 0.001) {
         //paper.fillStyle = 'rgba(0,0,0,' + alpha + ')';
         paper.fillStyle = 'rgb(0,0,0)';
-        paper.fillRect(0, 0, windowWidth, windowHeight;
+        paper.fillRect(0, 0, windowWidth, windowHeight);
     //}
     if (massiveColliders.length > 0) {
 	// get the new momentum for the massive body, and the new mass
