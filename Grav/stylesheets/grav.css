@@ -1,0 +1,11 @@
+/* TODO: put your application-specific CSS here */
+body.palm-default {
+	background-color: #000;
+}
+
+.cssCanvas {
+	display: none;
+	position: absolute;
+	left: 0px;
+	top: 0px;
+}

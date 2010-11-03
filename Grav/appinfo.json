@@ -1,0 +1,9 @@
+{
+	"id": "com.grav.app",
+	"version": "1.0.0",
+	"vendor": "rsanchez",
+	"type": "web",
+	"main": "index.html",
+	"title": "Grav",
+	"icon": "icon.png"
+}
