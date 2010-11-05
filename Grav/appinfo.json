@@ -1,7 +1,7 @@
 {
 	"id": "com.grav.app",
-	"version": "1.0.0",
-	"vendor": "rsanchez",
+	"version": "0.1.0",
+	"vendor": "rsanchez1",
 	"type": "web",
 	"main": "index.html",
 	"title": "Grav",

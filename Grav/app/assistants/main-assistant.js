@@ -9,15 +9,18 @@ function MainAssistant() {
 	this.alpha = 1; // check if alpha is supported
 	this.screenHeight = 480;
 	this.bodies = [];
-	this.spaceHeight = 480000;
-	this.spaceWidth = 320000;
+	this.spaceHeight = 773044.8;
+	this.spaceWidth = 515363.2;
 	this.spaceX = 0;
 	this.spaceY = 0;
-    this.scalingWidth = 480000;
-    this.scalingHeight = 320000;
+    this.scalingWidth = 4800000;
+    this.scalingHeight = 3200000;
     this.scalingX = 0;
     this.scalingY = 0;
     this.gestureScale = 0;
+
+    this.newBodyMass = 1e-28;
+    this.systemIndex = 8;
 }
 
 MainAssistant.prototype.setup = function() {
@@ -43,7 +46,7 @@ MainAssistant.prototype.activate = function(event) {
 	    this.controller.get('canvas480').style.display = 'block';
 	    this.ctx = this.controller.get('canvas480').getContext('2d');
 	}
-	this.spaceHeight = this.screenHeight * 1000;
+	this.spaceHeight = this.screenHeight * 1610.51;
 	Mojo.Event.listen(this.controller.document, Mojo.Event.keydown, this.keyDownHandlerH, true);
 	Mojo.Event.listen(this.controller.document, Mojo.Event.keyup, this.keyUpHandlerH, true);
     if (this.screenHeight == 400) {
@@ -60,12 +63,12 @@ MainAssistant.prototype.activate = function(event) {
 	this.controller.listen(this.controller.document, Mojo.Event.tap, this.tapHandlerH, true);
 	this.controller.listen(this.controller.document, Mojo.Event.stageActivate, this.stageActivateHandlerH, true);
 	this.controller.listen(this.controller.document, Mojo.Event.stageDeactivate, this.stageDeactivateHandlerH, true);
-	this.loadBodies(8);
+	this.loadBodies(this.systemIndex);
 	this.calculateOrbit();
-// Do the setup code, then initiate the main loop
 };
 
 MainAssistant.prototype.keyDownHandler = function(event) {
+    //Mojo.Log.info('KEY EVENT: %j', event.originalEvent);
     var ek = event.originalEvent.keyCode;
     Mojo.Log.info('PRESSED KEY: ' + ek);
     var isW = ((ek == Mojo.Char.w) || (ek == Mojo.Char.w + 32));
@@ -122,6 +125,16 @@ MainAssistant.prototype.keyDownHandler = function(event) {
     // toggle bounce
     if (isB) {
         this.isBounce = !this.isBounce;
+    }
+    if (ek == 32) {
+        this.systemIndex++;
+        if (this.systemIndex > 11) {
+            this.systemIndex = 0;
+        }
+        this.loadBodies(this.systemIndex);
+    }
+    if (ek == 17) {
+        this.newBodyMass = 1/this.newBodyMass;
     }
     switch (ek) {
         case 48:
@@ -267,7 +280,7 @@ MainAssistant.prototype.gestureEndHandler = function(event) {
 MainAssistant.prototype.tapHandler = function(event) {
     var x = event.down.x;
     var y = event.down.y;
-    this.addBody((x * (this.spaceWidth / 320)) - this.spaceX, (y * (this.spaceHeight / this.screenHeight)) - this.spaceY, /*+document.getElementById('newmass').value*/ 1e-28, /*randomOrientation*/ true);
+    this.addBody((x * (this.spaceWidth / 320)) - this.spaceX, (y * (this.spaceHeight / this.screenHeight)) - this.spaceY, this.newBodyMass, /*randomOrientation*/ true);
 }
 
 MainAssistant.prototype.stageActivateHandler = function(event) {
@@ -485,6 +498,8 @@ MainAssistant.prototype.calculateOrbit = function() {
     var scale = this.spaceWidth / 320;
     this.ctx.fillStyle = 'rgb(0,0,0)';
     this.ctx.fillRect(0, 0, 320, this.screenHeight);
+    var com = [0, 0];
+    var totalMass = 0;
     for (var i = bodiesLength; i--;) {
         var firstPosition = this.bodies[i].position;
         this.bodies[i].position = this.bodies[i].position.add((derivative1[i].position.add(derivative4[i].position).add(derivative3[i].position.multiply(2))).multiply(h6));
@@ -496,7 +511,13 @@ MainAssistant.prototype.calculateOrbit = function() {
         if (this.alpha < 1) {
             this.drawLine(position[0], position[1], firstPosition[0], firstPosition[1], radius, this.bodies[i].color, this.ctx);
         }
+        com = com.add(position.multiply(this.bodies[i].mass));
+        totalMass += this.bodies[i].mass;
     }
+    com = com.multiply(1/(totalMass));
+    this.drawBody(com[0], com[1], 3, '#fff', this.ctx);
+    this.ctx.strokeStyle = '#faa';
+    this.ctx.stroke();
     if (this.bodyCount != this.bodies.length) {
         this.bodyCount = this.bodies.length;
         //document.getElementById('bodyCount').innerHTML = 'There are ' + bodyCount + ' bodies.';
@@ -517,6 +538,7 @@ MainAssistant.prototype.addBody = function(x, y, newMass, randomOrientation) {
     var bodiesLength = this.bodies.length;
     if (bodiesLength > 0) {
         // just using the most massive body (body exerting greatest force), instead of COM, for simplicity
+        /*
         var mostMassiveBody = this.bodies[this.bodies.length - 1];
         var massiveIndex = 0;
         var delp = mostMassiveBody.position.subtract(newPosition);
@@ -533,7 +555,21 @@ MainAssistant.prototype.addBody = function(x, y, newMass, randomOrientation) {
         // Get the unit vector from the new body to the most massive body (COM), rotate it 90 degrees (either left or right),
         // multiply the unit vector by the velocity (sqrt(GM / R)) to get the velocity vector, then add the velocity vector
         // from the most massive body to get an orbital velocity vector relative to COM
-        velocity = mostMassiveBody.position.subtract(newPosition).toUnitVector().rotate(-Math.PI / 2).multiply(Math.sqrt((this.gravConstant * mostMassiveBody.mass) / mostMassiveBody.position.distanceFrom(newPosition))).add(mostMassiveBody.velocity);
+        */
+        var com = [0, 0];
+        var vel = [0, 0];
+        var totalMass = 0;
+        for (var i = 0; i < bodiesLength; i++) {
+            var mass = this.bodies[i].mass;
+            vel = vel.add(this.bodies[i].velocity.multiply(mass));
+            com = com.add(this.bodies[i].position.multiply(mass));
+            totalMass += mass;
+        }
+        com = com.multiply(1/totalMass);
+        vel = vel.multiply(1/totalMass);
+        //velocity = mostMassiveBody.position.subtract(newPosition).toUnitVector().rotate(-Math.PI / 2).multiply(Math.sqrt((this.gravConstant * mostMassiveBody.mass) / mostMassiveBody.position.distanceFrom(newPosition))).add(mostMassiveBody.velocity);
+        velocity = com.subtract(newPosition).toUnitVector().rotate(-Math.PI / 2).multiply(Math.sqrt((this.gravConstant * totalMass) / com.distanceFrom(newPosition))).add(vel);
+        randomOrientation = false;
     } else {
         velocity = [0,0];
     }
@@ -716,7 +752,6 @@ MainAssistant.prototype.loadBodies = function(id) {
                 color: '#ff0'}, ];
             break;
         case 3:
-/*
             // Gliese 876 System
             // Gliese 876d is unstable, system exhibits large movement from massive planets close to star
             this.bodies = [
@@ -739,19 +774,6 @@ MainAssistant.prototype.loadBodies = function(id) {
                  color:'#0ff'}
              ];
              break;
-*/
-	    //Test system
-	    this.bodies = [
-		{velocity: [0, 0],
-		 position: [160000, (1e100)+200000],
-		 radius: 1e100,
-		 mass: 6e219,
-		 color: '#fff'},
-		{velocity: [0, 0],
-		 position: [160000, 0],
-		 radius: 6000,
-		 mass: 1,
-		 color: '#ff0'}];
 	    break;
         case 4:
             // 55 Cancri System
@@ -884,16 +906,16 @@ MainAssistant.prototype.loadBodies = function(id) {
                  color: '#f00'},
 
                  {velocity: [0, 0],
-                 position: [308000, 393530.7436087194],
+                 position: [308000, 300000],
                  radius:27000,
                  mass:3e28,
-                 color: '#ff0'},
+                 color: '#f00'},
 
                  {velocity: [0, 0],
-                 position: [254000, 393530.7436087194],
+                 position: [362000, 300000],
                  radius:27000,
                  mass:3e28,
-                 color: '#ff0'},
+                 color: '#f00'},
 
                  {velocity: [0, 0],
                  position: [227000, 346765.3718043597],
@@ -908,28 +930,42 @@ MainAssistant.prototype.loadBodies = function(id) {
                  color: '#ff0'},
 
                  {velocity: [0, 0],
-                 position: [281000, 440296.1154130791],
-                 radius:27000,
-                 mass:3e28,
-                 color: '#0ff'},
-
-                 {velocity: [0, 0],
                  position: [335000, 346765.3718043597],
                  radius:27000,
                  mass:3e28,
                  color: '#ff0'},
 
                  {velocity: [0, 0],
-                 position: [308000, 300000],
+                 position: [308000, 393530.7436087194],
                  radius:27000,
                  mass:3e28,
-                 color: '#f00'},
+                 color: '#ff0'},
 
                  {velocity: [0, 0],
-                 position: [362000, 300000],
+                 position: [254000, 393530.7436087194],
                  radius:27000,
                  mass:3e28,
-                 color: '#f00'},
+                 color: '#ff0'},
+
+                 {velocity: [0, 0],
+                 position: [281000, 440296.1154130791],
+                 radius:27000,
+                 mass:3e28,
+                 color: '#0ff'},
+
+/*
+                 {velocity: [0, 3363.39775293444061675927],
+                 position: [65000, 346765.3718043597],
+                 radius: 6000,
+                 mass: 1,
+                 color: '#ff0'},
+
+                 {velocity: [0, 3008.31440437258079415438],
+                 position: [11000, 346765.3718043597],
+                 radius: 6000,
+                 mass: 1,
+                 color: '#ff0'},
+                 */
             ];
             break;
         case 10:
@@ -980,7 +1016,19 @@ MainAssistant.prototype.loadBodies = function(id) {
                  color: '#f00'},
 
                  {velocity: [0, 0],
-                 position: [1000000, 300000], // try at 11
+                 position: [1000000, 300000], 
+                 radius:27000,
+                 mass:3e28,
+                 color: '#ff0'},
+                 
+                 {velocity: [0, 0],
+                 position: [1054000, 300000], 
+                 radius:27000,
+                 mass:3e28,
+                 color: '#ff0'},
+
+                 {velocity: [0, 0],
+                 position: [1108000, 300000], 
                  radius:27000,
                  mass:3e28,
                  color: '#ff0'},
