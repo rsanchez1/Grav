@@ -115,6 +115,7 @@ function handleArrowEvents(ev) {
 
 function pageEvents(ev) {
     var ek = ev.which;
+    debug(ek);
     var willReset = false;
     var oldRect = rectDimensions.slice();
     // transform the canvas based on movement/zoom
@@ -532,11 +533,11 @@ function calculateOrbit() {
     symplectic(derivative2, derivative3, (-4*symInput) - 1, -symInput);
     symplectic(derivative3, derivative4, (2*symInput) + 1, symInput + .5);
     */
-    //if (alpha >= 0.001) {
-        //paper.fillStyle = 'rgba(0,0,0,' + alpha + ')';
-        paper.fillStyle = 'rgb(0,0,0)';
-        paper.fillRect(0, 0, windowWidth, windowHeight);
-    //}
+    if (alpha >= 0.001) {
+        paper.fillStyle = 'rgba(0,0,0,' + alpha + ')';
+        //paper.fillRect(-rectDimensions[0], -rectDimensions[1], rectDimensions[2], rectDimensions[3]);
+	paper.fillRect(0, 0, windowWidth, windowHeight);
+    }
     if (massiveColliders.length > 0) {
 	// get the new momentum for the massive body, and the new mass
         /*
@@ -604,6 +605,8 @@ function calculateOrbit() {
     }
     bodiesLength = bodies.length;
     var scale = rectDimensions[2] / windowWidth;
+    var com = [0, 0];
+    var totalMass = 0;
     for (var i = bodiesLength; i--;) {
         var firstPosition = bodies[i].position;
         bodies[i].position = bodies[i].position.add((derivative1[i].position.add(derivative4[i].position).add(derivative3[i].position.multiply(2))).multiply(h6));
@@ -622,14 +625,18 @@ function calculateOrbit() {
         */
         energy += .5 * bodies[i].mass * bodies[i].velocity.dot(bodies[i].velocity);
         var radius = bodies[i].radius / scale;
-        var position = bodies[i].position.multiply(1/scale);
+        var position = bodies[i].position.add([rectDimensions[0], rectDimensions[1]]).multiply(1/scale);
+        com = com.add(position.multiply(bodies[i].mass));
+        totalMass += bodies[i].mass;
         drawBody(position[0], position[1], radius, bodies[i].color, paper);
-        /*
         if (alpha < 1) {
             drawLine(bodies[i].position[0], bodies[i].position[1], firstPosition[0], firstPosition[1], bodies[i].radius, bodies[i].color, paper);
         }
-        */
     }
+    com = com.multiply(1/totalMass);
+    drawBody(com[0], com[1], 3, '#fff', paper);
+    paper.strokeStyle = '#f77';
+    paper.stroke();
     energy = '' + energy;
     var exponent = energy.split('e');
     energy = exponent[0];
@@ -658,6 +665,7 @@ function addBody(x, y, newMass, randomOrientation) {
     var bodiesLength = bodies.length;
     if (bodiesLength > 0) {
         // just using the most massive body (body exerting greatest force), instead of COM, for simplicity
+/*
         var mostMassiveBody = bodies[bodies.length - 1];
         var massiveIndex = 0;
         var delp = mostMassiveBody.position.subtract(newPosition);
@@ -675,6 +683,21 @@ function addBody(x, y, newMass, randomOrientation) {
         // multiply the unit vector by the velocity (sqrt(GM / R)) to get the velocity vector, then add the velocity vector
         // from the most massive body to get an orbital velocity vector relative to COM
         velocity = mostMassiveBody.position.subtract(newPosition).toUnitVector().rotate(-Math.PI / 2).multiply(Math.sqrt((gravConstant * mostMassiveBody.mass) / mostMassiveBody.position.distanceFrom(newPosition))).add(mostMassiveBody.velocity);
+*/
+        var com = [0, 0];
+        var vel = [0, 0];
+        var totalMass = 0;
+        for (var i = 0; i < bodiesLength; i++) {
+            var mass = this.bodies[i].mass;
+            vel = vel.add(this.bodies[i].velocity.multiply(mass));
+            com = com.add(this.bodies[i].position.multiply(mass));
+            totalMass += mass;
+        }
+        com = com.multiply(1/totalMass);
+        vel = vel.multiply(1/totalMass);
+        //velocity = mostMassiveBody.position.subtract(newPosition).toUnitVector().rotate(-Math.PI / 2).multiply(Math.sqrt((this.gravConstant * mostMassiveBody.mass) / mostMassiveBody.position.distanceFrom(newPosition))).add(mostMassiveBody.velocity);
+        velocity = com.subtract(newPosition).toUnitVector().rotate(-Math.PI / 2).multiply(Math.sqrt((this.gravConstant * totalMass) / com.distanceFrom(newPosition))).add(vel);
+	randomOrientation = false;
     } else {
         velocity = [0,0];
     }
