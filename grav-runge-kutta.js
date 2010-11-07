@@ -903,7 +903,24 @@ function loadBodies(id) {
                 position: [900000, 300000],
                 radius: 10000,
                 mass: 1e29,
-                color: '#ff0'}, ];
+                color: '#ff0'}, 
+            ];
+            break;
+        case 21:
+            // two-body system
+            bodies = [{
+                velocity: [0, 1009.01932588033218502780],
+                position: [500000, 300000],
+                radius: 10000,
+                mass: 1.9889e30,
+                color: '#ff0'},
+            {
+                velocity: [0, -1009.01932588033218502780],
+                position: [900000, 300000],
+                radius: 10000,
+                mass: 1.896e27,
+                color: '#ff0'}, 
+            ];
             break;
         case 2:
             // A four-body system with all bodies orbiting the common center of mass, not stable
