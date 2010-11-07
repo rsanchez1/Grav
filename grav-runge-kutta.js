@@ -63,10 +63,10 @@ Array.prototype.toUnitVector = function() {
     var mag = Math.sqrt((this[0] * this[0]) + (this[1] * this[1]));
     return [this[0] / mag, this[1] / mag];
 }
-Array.prototype.rotate = function(angle) {
+Array.prototype.rotate = function(iangle) {
     // only used to initialize position of new bodies, see how to adapt to 3d
-    var cosangle = Math.cos(angle);
-    var sinangle = Math.sin(angle);
+    var cosangle = Math.cos(iangle);
+    var sinangle = Math.sin(iangle);
     return [(cosangle * this[0]) + (-sinangle * this[1]), (sinangle * this[0]) + (cosangle * this[1])];
 }
 /*
@@ -106,7 +106,10 @@ function addBodyClick(ev) {
     if (!!ev.shiftKey) {
         randomOrientation = true;
     }
-    addBody((x * (rectDimensions[2] / windowWidth)) - rectDimensions[0], (y * (rectDimensions[3] / windowHeight)) - rectDimensions[1], +document.getElementById('newmass').value, randomOrientation);
+    var pos = [(x * (rectDimensions[2] / windowWidth)) - rectDimensions[0], (y * (rectDimensions[3] / windowHeight)) - rectDimensions[1]];
+    var global = globalOrigin.add([rectDimensions[0], rectDimensions[1]]);
+    pos = pos.subtract(globalOrigin).rotate(-angle).add(globalOrigin);
+    addBody(pos[0], pos[1], +document.getElementById('newmass').value, randomOrientation);
 }
 
 function handleArrowEvents(ev) {
@@ -607,6 +610,9 @@ function calculateOrbit() {
     var scale = rectDimensions[2] / windowWidth;
     var com = [0, 0];
     var totalMass = 0;
+    angle += angularVelocity;
+    angle %= 2*Math.PI;
+    var global = globalOrigin.add([rectDimensions[0], rectDimensions[1]]);
     for (var i = bodiesLength; i--;) {
         var firstPosition = bodies[i].position;
         bodies[i].position = bodies[i].position.add((derivative1[i].position.add(derivative4[i].position).add(derivative3[i].position.multiply(2))).multiply(h6));
@@ -625,7 +631,10 @@ function calculateOrbit() {
         */
         energy += .5 * bodies[i].mass * bodies[i].velocity.dot(bodies[i].velocity);
         var radius = bodies[i].radius / scale;
-        var position = bodies[i].position.add([rectDimensions[0], rectDimensions[1]]).multiply(1/scale);
+        if (radius < 3) {
+            radius = 3;
+        }
+        var position = bodies[i].position.add([rectDimensions[0], rectDimensions[1]]).subtract(global).rotate(angle).add(global).multiply(1/scale);
         com = com.add(position.multiply(bodies[i].mass));
         totalMass += bodies[i].mass;
         drawBody(position[0], position[1], radius, bodies[i].color, paper);
@@ -657,15 +666,16 @@ function calculateOrbit() {
 function addBody(x, y, newMass, randomOrientation) {
     var newRadius = Math.pow((newMass) / 2.50596227828973444312e19, 1/2); // using average density of all planets of 3.1251e3 kg / m
     //newRadius /= 1e5; // 1px = 1e-5 m
+    /*
     if (newRadius < 6000) {
 	newRadius = 6000;
     }
+    */
     var newPosition = [x, y];
     var velocity = 0;
     var bodiesLength = bodies.length;
     if (bodiesLength > 0) {
         // just using the most massive body (body exerting greatest force), instead of COM, for simplicity
-/*
         var mostMassiveBody = bodies[bodies.length - 1];
         var massiveIndex = 0;
         var delp = mostMassiveBody.position.subtract(newPosition);
@@ -683,7 +693,7 @@ function addBody(x, y, newMass, randomOrientation) {
         // multiply the unit vector by the velocity (sqrt(GM / R)) to get the velocity vector, then add the velocity vector
         // from the most massive body to get an orbital velocity vector relative to COM
         velocity = mostMassiveBody.position.subtract(newPosition).toUnitVector().rotate(-Math.PI / 2).multiply(Math.sqrt((gravConstant * mostMassiveBody.mass) / mostMassiveBody.position.distanceFrom(newPosition))).add(mostMassiveBody.velocity);
-*/
+        /*
         var com = [0, 0];
         var vel = [0, 0];
         var totalMass = 0;
@@ -695,8 +705,8 @@ function addBody(x, y, newMass, randomOrientation) {
         }
         com = com.multiply(1/totalMass);
         vel = vel.multiply(1/totalMass);
-        //velocity = mostMassiveBody.position.subtract(newPosition).toUnitVector().rotate(-Math.PI / 2).multiply(Math.sqrt((this.gravConstant * mostMassiveBody.mass) / mostMassiveBody.position.distanceFrom(newPosition))).add(mostMassiveBody.velocity);
         velocity = com.subtract(newPosition).toUnitVector().rotate(-Math.PI / 2).multiply(Math.sqrt((this.gravConstant * totalMass) / com.distanceFrom(newPosition))).add(vel);
+        */
 	randomOrientation = false;
     } else {
         velocity = [0,0];
@@ -1220,6 +1230,10 @@ window.onload = function() {
     bodyCount = 0;
     alpha = 1;
     counts = 0;
+    angle = 0;
+    angularVelocity = 2 * Math.PI / 1245.40435371695954330138;
+    //angularVelocity = 0;
+    globalOrigin = [700000,300000];
     var canvas = document.getElementById('canvas');
     windowWidth = getWidth();
     windowHeight = getHeight();
@@ -1248,7 +1262,7 @@ window.onload = function() {
         var bodiestring = window.location.hash.substring(1);
         bodies = JSON.parse(bodiestring)
     } else {
-        loadBodies(11);
+        loadBodies(1);
     }
     calculateOrbit();
 };
