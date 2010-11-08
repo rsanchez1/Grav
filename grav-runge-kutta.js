@@ -166,6 +166,11 @@ function pageEvents(ev) {
         isBounce = !isBounce;
         document.getElementById('bounce').innerHTML = (isBounce && 'On') || 'Off';
     }
+    // toggle rotating reference frame
+    if (ek == 114) {
+	isRotating = !isRotating;
+	document.getElementById('rotating').innerHTML = (isRotating && 'On') || 'Off';
+    }
     resetCanvas(oldRect, willReset);
 }
 
@@ -634,7 +639,11 @@ function calculateOrbit() {
         if (radius < 3) {
             radius = 3;
         }
-        var position = bodies[i].position.add([rectDimensions[0], rectDimensions[1]]).subtract(global).rotate(angle).add(global).multiply(1/scale);
+        var position = bodies[i].position.add([rectDimensions[0], rectDimensions[1]]);
+	if (isRotating) {
+	    position = position.subtract(global).rotate(angle).add(global);
+	}
+	position = position.multiply(1/scale);
         com = com.add(position.multiply(bodies[i].mass));
         totalMass += bodies[i].mass;
         drawBody(position[0], position[1], radius, bodies[i].color, paper);
@@ -733,6 +742,11 @@ function addRings(dist, center, interval, mass) {
 function loadBodies(id) {
     paper.fillStyle = 'rgb(0,0,0)';
     paper.fillRect(-rectDimensions[0], -rectDimensions[1], rectDimensions[2], rectDimensions[3]);
+    angle = 0;
+    //angularVelocity = 2 * Math.PI / 1245.40435371695954330138;
+    angularVelocity = 0;
+    //globalOrigin = [700000,300000];
+    globalOrigin = [0, 0];
     switch (id) {
         case 0:
             // Solar System
@@ -892,6 +906,9 @@ function loadBodies(id) {
              break;
         case 1:
             // two-body system
+            angle = 0;
+            angularVelocity = 2 * Math.PI / 1245.40435371695954330138;
+            globalOrigin = [700000,300000];
             bodies = [{
                 velocity: [0, 1009.01932588033218502780],
                 position: [500000, 300000],
@@ -908,18 +925,42 @@ function loadBodies(id) {
             break;
         case 21:
             // two-body system
+            angle = 0;
+            angularVelocity = 2 * Math.PI / 139.56173361929350668012;
+            globalOrigin = [500000,300000];
             bodies = [{
-                velocity: [0, 1009.01932588033218502780],
-                position: [500000, 300000],
+                velocity: [0, 8.57540091759740613133],
+                position: [499809.225, 300000],
                 radius: 10000,
                 mass: 1.9889e30,
                 color: '#ff0'},
             {
-                velocity: [0, -1009.01932588033218502780],
-                position: [900000, 300000],
-                radius: 10000,
+                velocity: [0, -8995.57747099656173765584],
+                position: [699809.225, 300000],
+                radius: 7000,
                 mass: 1.896e27,
                 color: '#ff0'}, 
+            {
+                velocity: [0, 8995.57747099656173765584],
+                //position: [281726, 300000],
+                position: [299809.225, 300000],
+                //position: [294809.225, 300000],
+/*
+                velocity: [0, 9995.57747099656173765584],
+                position: [319809.225, 300000],
+*/
+                radius: 1,
+                mass: 1e-30,
+                color: '#f00'}, 
+/*
+            {
+                //velocity: [0, 9995.57747099656173765584],
+                velocity: [0, 10195.57747099656173765584],
+                position: [319809.225, 300000],
+                radius: 1,
+                mass: 1e-30,
+                color: '#ff0'}, 
+*/
             ];
             break;
         case 2:
@@ -1244,13 +1285,15 @@ window.onload = function() {
     isBounce = true;
     isPaused = false;
     antiFlicker = false;
+    isRotating = false;
     bodyCount = 0;
     alpha = 1;
     counts = 0;
     angle = 0;
-    angularVelocity = 2 * Math.PI / 1245.40435371695954330138;
-    //angularVelocity = 0;
-    globalOrigin = [700000,300000];
+    //angularVelocity = 2 * Math.PI / 1245.40435371695954330138;
+    angularVelocity = 0;
+    //globalOrigin = [700000,300000];
+    globalOrigin = [0, 0];
     var canvas = document.getElementById('canvas');
     windowWidth = getWidth();
     windowHeight = getHeight();
