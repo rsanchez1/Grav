@@ -937,18 +937,33 @@ function loadBodies(id) {
             {
                 velocity: [0, -8995.57747099656173765584],
                 position: [699809.225, 300000],
-                radius: 7000,
+                radius: 5000,
                 mass: 1.896e27,
                 color: '#ff0'}, 
+                /*
+            {
+                //region of influence for jupiter-mass object
+                velocity: [0, -7752.88506496842478129311],
+                position: [709809.225, 300000],
+                radius: 1,
+                mass: 1e-30,
+                color: '#00f'}, 
+                */
+                /*
+            {
+                velocity: [0, 9115.46636979720637338004],
+                position: [304664, 300000],
+                radius: 1,
+                mass: 1e-30,
+                color: '#f00'}, 
+                */
             {
                 velocity: [0, 8995.57747099656173765584],
                 //position: [281726, 300000],
                 position: [299809.225, 300000],
                 //position: [294809.225, 300000],
-/*
-                velocity: [0, 9995.57747099656173765584],
-                position: [319809.225, 300000],
-*/
+                //velocity: [0, 9995.57747099656173765584],
+                //position: [319809.225, 300000],
                 radius: 1,
                 mass: 1e-30,
                 color: '#f00'}, 
