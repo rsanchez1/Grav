@@ -980,26 +980,33 @@ function loadBodies(id) {
             break;
         case 2:
             // A four-body system with all bodies orbiting the common center of mass, not stable
+            angle = 0;
+            angularVelocity = 2 * Math.PI / 1169.38970105645338634783;
+            globalOrigin = [600000,300000];
             bodies = [{
-                velocity: [0, 1922.34193589967716713965],
+                //velocity: [0, 1922.34193589967716713965],
+                velocity: [0, 1611.913967132568359375],
                 position: [300000, 300000],
                 radius: 6000,
                 mass: 1e29,
                 color: '#ff0'},
             {
-                velocity: [0, -1922.34193589967716713965],
+                //velocity: [0, -1922.34193589967716713965],
+                velocity: [0, -1611.913967132568359375],
                 position: [900000, 300000],
                 radius: 6000,
                 mass: 1e29,
                 color: '#ff0'},
             {
-                velocity: [1922.34193589967716713965, 0],
+                //velocity: [1922.34193589967716713965, 0],
+                velocity: [1611.913967132568359375, 0],
                 position: [600000, 600000],
                 radius: 6000,
                 mass: 1e29,
                 color: '#ff0'},
             {
-                velocity: [-1922.34193589967716713965, 0],
+                //velocity: [-1922.34193589967716713965, 0],
+                velocity: [-1611.913967132568359375, 0],
                 position: [600000, 0],
                 radius: 6000,
                 mass: 1e29,
