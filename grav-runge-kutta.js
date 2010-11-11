@@ -926,19 +926,25 @@ function loadBodies(id) {
         case 21:
             // two-body system
             angle = 0;
-            angularVelocity = 2 * Math.PI / 139.56173361929350668012;
+            angularVelocity = 2 * Math.PI / 139.56194206293700933434;
             globalOrigin = [500000,300000];
             bodies = [{
-                velocity: [0, 8.57540091759740613133],
-                position: [499809.225, 300000],
+                velocity: [0, 8.5753931246],
+                position: [499809.3418472522, 300000],
                 radius: 10000,
                 mass: 1.9889e30,
                 color: '#ff0'},
             {
-                velocity: [0, -8995.57747099656173765584],
-                position: [699809.225, 300000],
+                velocity: [0, -8995.5692961461],
+                position: [699809.341847252, 300000],
                 radius: 5000,
                 mass: 1.896e27,
+                color: '#ff0'}, 
+            {
+                velocity: [0, 8879.6940],
+                position: [294700.658152748, 300000],
+                radius: 1,
+                mass: 1e-30,
                 color: '#ff0'}, 
                 /*
             {
@@ -957,6 +963,7 @@ function loadBodies(id) {
                 mass: 1e-30,
                 color: '#f00'}, 
                 */
+/*
             {
                 velocity: [0, 8995.57747099656173765584],
                 //position: [281726, 300000],
@@ -967,6 +974,7 @@ function loadBodies(id) {
                 radius: 1,
                 mass: 1e-30,
                 color: '#f00'}, 
+*/
 /*
             {
                 //velocity: [0, 9995.57747099656173765584],
