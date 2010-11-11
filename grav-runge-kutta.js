@@ -636,8 +636,8 @@ function calculateOrbit() {
         */
         energy += .5 * bodies[i].mass * bodies[i].velocity.dot(bodies[i].velocity);
         var radius = bodies[i].radius / scale;
-        if (radius < 3) {
-            radius = 3;
+        if (radius < 2) {
+            radius = 2;
         }
         var position = bodies[i].position.add([rectDimensions[0], rectDimensions[1]]);
 	if (isRotating) {
@@ -701,7 +701,7 @@ function addBody(x, y, newMass, randomOrientation) {
         // Get the unit vector from the new body to the most massive body (COM), rotate it 90 degrees (either left or right),
         // multiply the unit vector by the velocity (sqrt(GM / R)) to get the velocity vector, then add the velocity vector
         // from the most massive body to get an orbital velocity vector relative to COM
-        velocity = mostMassiveBody.position.subtract(newPosition).toUnitVector().rotate(-Math.PI / 2).multiply(Math.sqrt((gravConstant * mostMassiveBody.mass) / mostMassiveBody.position.distanceFrom(newPosition))).add(mostMassiveBody.velocity);
+        velocity = mostMassiveBody.position.subtract(newPosition).toUnitVector().rotate(Math.PI / 2).multiply(Math.sqrt((gravConstant * mostMassiveBody.mass) / mostMassiveBody.position.distanceFrom(newPosition))).add(mostMassiveBody.velocity);
         /*
         var com = [0, 0];
         var vel = [0, 0];
