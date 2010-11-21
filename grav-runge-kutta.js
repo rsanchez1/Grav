@@ -636,8 +636,8 @@ function calculateOrbit() {
         */
         energy += .5 * bodies[i].mass * bodies[i].velocity.dot(bodies[i].velocity);
         var radius = bodies[i].radius / scale;
-        if (radius < 3) {
-            radius = 3;
+        if (radius < 2) {
+            radius = 2;
         }
         var position = bodies[i].position.add([rectDimensions[0], rectDimensions[1]]);
 	if (isRotating) {
@@ -701,7 +701,7 @@ function addBody(x, y, newMass, randomOrientation) {
         // Get the unit vector from the new body to the most massive body (COM), rotate it 90 degrees (either left or right),
         // multiply the unit vector by the velocity (sqrt(GM / R)) to get the velocity vector, then add the velocity vector
         // from the most massive body to get an orbital velocity vector relative to COM
-        velocity = mostMassiveBody.position.subtract(newPosition).toUnitVector().rotate(-Math.PI / 2).multiply(Math.sqrt((gravConstant * mostMassiveBody.mass) / mostMassiveBody.position.distanceFrom(newPosition))).add(mostMassiveBody.velocity);
+        velocity = mostMassiveBody.position.subtract(newPosition).toUnitVector().rotate(Math.PI / 2).multiply(Math.sqrt((gravConstant * mostMassiveBody.mass) / mostMassiveBody.position.distanceFrom(newPosition))).add(mostMassiveBody.velocity);
         /*
         var com = [0, 0];
         var vel = [0, 0];
@@ -926,32 +926,55 @@ function loadBodies(id) {
         case 21:
             // two-body system
             angle = 0;
-            angularVelocity = 2 * Math.PI / 139.56173361929350668012;
+            angularVelocity = 2 * Math.PI / 139.56194206293700933434;
             globalOrigin = [500000,300000];
             bodies = [{
-                velocity: [0, 8.57540091759740613133],
-                position: [499809.225, 300000],
+                velocity: [0, 8.5753931246],
+                position: [499809.3418472522, 300000],
                 radius: 10000,
                 mass: 1.9889e30,
                 color: '#ff0'},
             {
-                velocity: [0, -8995.57747099656173765584],
-                position: [699809.225, 300000],
-                radius: 7000,
+                velocity: [0, -8995.5692961461],
+                position: [699809.341847252, 300000],
+                radius: 5000,
                 mass: 1.896e27,
                 color: '#ff0'}, 
+            {
+                velocity: [0, 8879.6940],
+                position: [294700.658152748, 300000],
+                radius: 1,
+                mass: 1e-30,
+                color: '#ff0'}, 
+                /*
+            {
+                //region of influence for jupiter-mass object
+                velocity: [0, -7752.88506496842478129311],
+                position: [709809.225, 300000],
+                radius: 1,
+                mass: 1e-30,
+                color: '#00f'}, 
+                */
+                /*
+            {
+                velocity: [0, 9115.46636979720637338004],
+                position: [304664, 300000],
+                radius: 1,
+                mass: 1e-30,
+                color: '#f00'}, 
+                */
+/*
             {
                 velocity: [0, 8995.57747099656173765584],
                 //position: [281726, 300000],
                 position: [299809.225, 300000],
                 //position: [294809.225, 300000],
-/*
-                velocity: [0, 9995.57747099656173765584],
-                position: [319809.225, 300000],
-*/
+                //velocity: [0, 9995.57747099656173765584],
+                //position: [319809.225, 300000],
                 radius: 1,
                 mass: 1e-30,
                 color: '#f00'}, 
+*/
 /*
             {
                 //velocity: [0, 9995.57747099656173765584],
@@ -965,26 +988,33 @@ function loadBodies(id) {
             break;
         case 2:
             // A four-body system with all bodies orbiting the common center of mass, not stable
+            angle = 0;
+            angularVelocity = 2 * Math.PI / 1169.38970105645338634783;
+            globalOrigin = [600000,300000];
             bodies = [{
-                velocity: [0, 1922.34193589967716713965],
+                //velocity: [0, 1922.34193589967716713965],
+                velocity: [0, 1611.913967132568359375],
                 position: [300000, 300000],
                 radius: 6000,
                 mass: 1e29,
                 color: '#ff0'},
             {
-                velocity: [0, -1922.34193589967716713965],
+                //velocity: [0, -1922.34193589967716713965],
+                velocity: [0, -1611.913967132568359375],
                 position: [900000, 300000],
                 radius: 6000,
                 mass: 1e29,
                 color: '#ff0'},
             {
-                velocity: [1922.34193589967716713965, 0],
+                //velocity: [1922.34193589967716713965, 0],
+                velocity: [1611.913967132568359375, 0],
                 position: [600000, 600000],
                 radius: 6000,
                 mass: 1e29,
                 color: '#ff0'},
             {
-                velocity: [-1922.34193589967716713965, 0],
+                //velocity: [-1922.34193589967716713965, 0],
+                velocity: [-1611.913967132568359375, 0],
                 position: [600000, 0],
                 radius: 6000,
                 mass: 1e29,
