@@ -5,6 +5,11 @@ function MainAssistant() {
                                // The "Sun" has its normal mass in kg.
 	this.isBounce = true;
 	this.isPaused = false;
+	this.antiFlicker = false;
+	this.isRotating = false;
+	this.angle = 0;
+	this.angularVelocity = 0;
+	this.globalOrigin = [0, 0];
 	this.bodyCount = 0;
 	this.alpha = 1; // check if alpha is supported
 	this.screenHeight = 480;
@@ -20,7 +25,7 @@ function MainAssistant() {
     this.gestureScale = 0;
 
     this.newBodyMass = 1e-28;
-    this.systemIndex = 8;
+    this.systemIndex = 2;
 }
 
 MainAssistant.prototype.setup = function() {
@@ -82,6 +87,7 @@ MainAssistant.prototype.keyDownHandler = function(event) {
     var isT = ((ek == Mojo.Char.t) || (ek == Mojo.Char.t + 32));
     var isM = ((ek == Mojo.Char.m) || (ek == Mojo.Char.m + 32));
     var isL = ((ek == Mojo.Char.l) || (ek == Mojo.Char.l + 32));
+	var isR = ((ek == Mojo.Char.r) || (ek == Mojo.Char.r + 32));
     // transform the canvas based on movement/zoom
     this.spaceX += this.spaceWidth * ((-(isI) * (45 / 990)) || (+(isO) * (45 / 900)) || ((-(isD) || (+(isA))) * (1 / 30)));
     this.spaceY += this.spaceHeight * (((-(isI) || +(isO)) * (45 / 990)) || ((-(isS) || (+(isW))) * (1 / 30)));
@@ -126,32 +132,40 @@ MainAssistant.prototype.keyDownHandler = function(event) {
     if (isB) {
         this.isBounce = !this.isBounce;
     }
-    if (ek == 32) {
+	// toggle rotating reference frame
+    if (isR) {
+		this.isRotating = !this.isRotating;
+		//document.getElementById('rotating').innerHTML = (isRotating && 'On') || 'Off';
+    }
+
+    if (ek == 32) { // Spacebar
         this.systemIndex++;
         if (this.systemIndex > 11) {
             this.systemIndex = 0;
         }
         this.loadBodies(this.systemIndex);
     }
-    if (ek == 17) {
+    if (ek == 17) { // SYM button
         this.newBodyMass = 1/this.newBodyMass;
     }
     switch (ek) {
-        case 48:
+		// 48 = 0 (orange+0), 49 = 1, etc.
+        case 49:
             this.loadBodies(0);
             break;
-        case 49:
+        case 50:
             this.loadBodies(1);
             break;
-        case 50:
+        case 51:
             this.loadBodies(2);
             break;
-        case 51:
+        case 52:
             this.loadBodies(3);
             break;
-        case 52:
+        case 53:
             this.loadBodies(4);
             break;
+			/*
         case 53:
             this.loadBodies(5);
             break;
@@ -167,6 +181,7 @@ MainAssistant.prototype.keyDownHandler = function(event) {
         case 57:
             this.loadBodies(9);
             break;
+			*/
         default:
             break;
     }
@@ -280,7 +295,10 @@ MainAssistant.prototype.gestureEndHandler = function(event) {
 MainAssistant.prototype.tapHandler = function(event) {
     var x = event.down.x;
     var y = event.down.y;
-    this.addBody((x * (this.spaceWidth / 320)) - this.spaceX, (y * (this.spaceHeight / this.screenHeight)) - this.spaceY, this.newBodyMass, /*randomOrientation*/ true);
+	var pos = [(x * (this.spaceWidth / 320)) - this.spaceX, (y * (this.spaceHeight / this.screenHeight)) - this.spaceY];
+	var global = this.globalOrigin.add([this.spaceX, this.spaceY]);
+	pos = pos.subtract(this.globalOrigin).rotate(-this.angle).add(this.globalOrigin);
+    this.addBody(pos[0], pos[1], this.newBodyMass, false);
 }
 
 MainAssistant.prototype.stageActivateHandler = function(event) {
@@ -496,17 +514,27 @@ MainAssistant.prototype.calculateOrbit = function() {
     }
     bodiesLength = this.bodies.length;
     var scale = this.spaceWidth / 320;
-    this.ctx.fillStyle = 'rgb(0,0,0)';
-    this.ctx.fillRect(0, 0, 320, this.screenHeight);
+	if (this.alpha >= 0.001) {
+		//this.ctx.fillStyle = 'rgba(0,0,0 ' + this.alpha + ')';
+		this.ctx.fillStyle = 'rgb(0,0,0)';
+		this.ctx.fillRect(0, 0, 320, this.screenHeight);
+	}
     var com = [0, 0];
     var totalMass = 0;
+	this.angle += this.angularVelocity;
+	this.angle %= 2 * Math.PI;
+	var global = this.globalOrigin.add([this.spaceX, this.spaceY]);
     for (var i = bodiesLength; i--;) {
         var firstPosition = this.bodies[i].position;
         this.bodies[i].position = this.bodies[i].position.add((derivative1[i].position.add(derivative4[i].position).add(derivative3[i].position.multiply(2))).multiply(h6));
         this.bodies[i].velocity = this.bodies[i].velocity.add((derivative1[i].velocity.add(derivative4[i].velocity).add(derivative3[i].velocity.multiply(2))).multiply(h6));
         energy += .5 * this.bodies[i].mass * this.bodies[i].velocity.dot(this.bodies[i].velocity);
         var radius = this.bodies[i].radius / scale;
-        var position = this.bodies[i].position.add([this.spaceX, this.spaceY]).multiply(1/scale);
+        var position = this.bodies[i].position.add([this.spaceX, this.spaceY]);
+		if (this.isRotating) {
+			position = position.subtract(global).rotate(this.angle).add(global);
+		}
+		position = position.multiply(1/scale);
         this.drawBody(position[0], position[1], radius, this.bodies[i].color, this.ctx);
         if (this.alpha < 1) {
             this.drawLine(position[0], position[1], firstPosition[0], firstPosition[1], radius, this.bodies[i].color, this.ctx);
@@ -586,306 +614,90 @@ MainAssistant.prototype.addBody = function(x, y, newMass, randomOrientation) {
 MainAssistant.prototype.loadBodies = function(id) {
     this.ctx.fillStyle = 'rgb(0,0,0)';
     this.ctx.fillRect(0, 0, 320, this.screenHeight);
+	this.angle = 0;
+	this.angularVelocity = 0;
+	this.globalOrigin = [0, 0];
     switch (id) {
         case 0:
-            // Solar System
-            // Most planets/moons have radius 3000 so they can be seen
-            // Moons have to be given retrograde orbits for stability
-            // Moons that are interesting but unstable: Io, Titania
-            this.bodies = [
-                 {velocity: [0, 0], // Sun
-                 position: [500000, 300000],
-                 radius:6960,
-                 mass:1.9889e30,
-                 color:'#ff0'},
-
-                 {velocity: [0, 5289.007336], // Mercury
-                 position: [1079100, 300000],
-                 radius: 3000,
-                 mass: 3.3022e23,
-                 color:'#ddd'},
-                 
-                 {velocity: [0, 3869.165024], // Venus
-                 position: [1582100, 300000],
-                 radius: 3000,
-                 mass: 4.8685e24,
-                 color:'#aac'},
-
-                 {velocity: [0, 3290.6762], // Earth
-                 position: [1996000, 300000],
-                 radius: 3000,
-                 mass: 5.9736e24,
-                 color:'#99f'},
-
-                 {velocity: [0, 3178.17145], // Moon
-                 position: [1999844, 300000],
-                 radius: 3000,
-                 mass: 7.3477e22,
-                 color:'#ddd'},
-
-                 {velocity: [0, 2665.880512], // Mars
-                 position: [2779400, 300000],
-                 radius: 3000,
-                 mass: 6.4185e23,
-                 color:'#f99'},
-
-                 {velocity: [0, 1442.473015], // Jupiter
-                 position: [8285500, 300000],
-                 radius: 3000,
-                 mass: 1.896e27,
-                 color:'#99f'},
-
-                 {velocity: [0, -74.69873852], // Europa
-                 position: [8292209, 300000],
-                 radius: 3000,
-                 mass: 4.8e22,
-                 color:'#fff'},
-
-                 {velocity: [0, 241.341411], // Ganymede
-                 position: [8296204, 300000],
-                 radius: 3000,
-                 mass: 1.4819e23,
-                 color:'#ddd'},
-
-                 {velocity: [0, 536.868698], // Callisto
-                 position: [8304430, 300000],
-                 radius: 3000,
-                 mass: 1.0759e23,
-                 color:'#eee'},
-
-                 {velocity: [0, 1063.083192], // Saturn
-                 position: [14834000, 300000],
-                 radius: 3000,
-                 mass: 5.6846e26,
-                 color:'#99f'},
-
-                 {velocity: [0, 155.8494292], // Rhea
-                 position: [14839271, 300000],
-                 radius: 3000,
-                 mass: 2.306e21,
-                 color:'#ddd'},
-
-                 {velocity: [0, 447.539578], // Titan
-                 position: [14846220, 300000],
-                 radius: 3000,
-                 mass: 1.3452e23,
-                 color:'#88f'},
-
-                 {velocity: [0, 750.4187296], // Uranus
-                 position: [29267000, 300000],
-                 radius: 3000,
-                 mass: 8.6810e25,
-                 color:'#9f9'},
-
-                 {velocity: [0, 347.6683842], // Titania
-                 position: [29271359, 300000],
-                 radius: 3000,
-                 mass: 3.527e21,
-                 color:'#ddd'},
-
-                 {velocity: [0, 402.4638492], // Oberon
-                 position: [29272840, 300000],
-                 radius: 3000,
-                 mass: 3.014e21,
-                 color:'#ddd'},
-
-                 {velocity: [0, 599.7644084], // Neptune
-                 position: [45534000, 300000],
-                 radius: 3000,
-                 mass: 1.0243e26,
-                 color:'#bbf'},
-
-                 {velocity: [0, 114.7803426], // Triton
-                 position: [45537547, 300000],
-                 radius: 3000,
-                 mass:2.14e22,
-                 color:'#eee'},
-
-                 {velocity: [0, 476.7555188], // Nereid
-                 position: [45589137, 300000],
-                 radius: 3000,
-                 mass: 3.1e19,
-                 color:'#ddd'},
-
-             ];
-             break;
-        case 1:
             // two-body system
+			this.angle = 0;
+			this.angularVelocity = 2 * Math.PI / 1245.40435371695954330138;
+			this.globalOrigin = [250000, 300000];
             this.bodies = [{
                 velocity: [0, 1009.01932588033218502780],
-                position: [500000, 300000],
+                position: [50000, 300000],
                 radius: 10000,
                 mass: 1e29,
                 color: '#ff0'},
             {
                 velocity: [0, -1009.01932588033218502780],
-                position: [900000, 300000],
+                position: [450000, 300000],
                 radius: 10000,
                 mass: 1e29,
                 color: '#ff0'}, ];
             break;
+        case 1:
+            // two-body system
+            this.angle = 0;
+            this.angularVelocity = 2 * Math.PI / 139.56194206293700933434;
+            this.globalOrigin = [255000,300000];
+            this.bodies = [{
+                velocity: [0, 8.5753931246],
+                position: [254809.3418472522, 300000],
+                radius: 10000,
+                mass: 1.9889e30,
+                color: '#ff0'},
+            {
+                velocity: [0, -8995.5692961461],
+                position: [454809.341847252, 300000],
+                radius: 5000,
+                mass: 1.896e27,
+                color: '#ff0'}, 
+            {
+                velocity: [0, 8879.6940],
+                position: [49700.658152748, 300000],
+                radius: 1,
+                mass: 1e-30,
+                color: '#ff0'}, 
+            ];
+            break;
         case 2:
             // A four-body system with all bodies orbiting the common center of mass, not stable
+			            // A four-body system with all bodies orbiting the common center of mass, not stable
+            this.angle = 0;
+            this.angularVelocity = 2 * Math.PI / 1169.38970105645338634783;
+            this.globalOrigin = [300000,300000];
             this.bodies = [{
-                velocity: [0, 1922.34193589967716713965],
-                position: [300000, 300000],
+                //velocity: [0, 1922.34193589967716713965],
+                velocity: [0, 1611.913967132568359375],
+                position: [0, 300000],
                 radius: 6000,
                 mass: 1e29,
                 color: '#ff0'},
             {
-                velocity: [0, -1922.34193589967716713965],
-                position: [900000, 300000],
+                //velocity: [0, -1922.34193589967716713965],
+                velocity: [0, -1611.913967132568359375],
+                position: [600000, 300000],
                 radius: 6000,
                 mass: 1e29,
                 color: '#ff0'},
             {
-                velocity: [1922.34193589967716713965, 0],
-                position: [600000, 600000],
+                //velocity: [1922.34193589967716713965, 0],
+                velocity: [1611.913967132568359375, 0],
+                position: [300000, 600000],
                 radius: 6000,
                 mass: 1e29,
                 color: '#ff0'},
             {
-                velocity: [-1922.34193589967716713965, 0],
-                position: [600000, 0],
+                //velocity: [-1922.34193589967716713965, 0],
+                velocity: [-1611.913967132568359375, 0],
+                position: [300000, 0],
                 radius: 6000,
                 mass: 1e29,
                 color: '#ff0'}, ];
-            break;
+			break;
+
         case 3:
-            // Gliese 876 System
-            // Gliese 876d is unstable, system exhibits large movement from massive planets close to star
-            this.bodies = [
-                 {velocity: [0, 0], //Gliese 876
-                 position: [6000000, 3000000],
-                 radius:6960,
-                 mass:6.642926e29,
-                 color:'#ff0'},
-
-                 {velocity: [0, 5234.45442451708230028402], //Gliese 876b
-                 position: [6197472, 3000000],
-                 radius: 3000,
-                 mass:1.57368e27,
-                 color:'#f0f'},
-
-                 {velocity: [0, 4140.16034], // Gliese 876c
-                 position: [6315656, 3000000],
-                 radius: 3000,
-                 mass:5.0054e27,
-                 color:'#0ff'}
-             ];
-             break;
-	    break;
-        case 4:
-            // 55 Cancri System
-            // 55 Cancri A e is unstable, 55 Cancri B may or may not be gravitationally bound to 55 Cancri A in this simulation
-            this.bodies = [
-                 {velocity: [0, 0], // 55 Cancri A
-                 position: [6000000, 3000000],
-                 radius:6960,
-                 mass:1.8895e30,
-                 color: '#ff0'},
-
-                 {velocity: [0, 9458.08492], // 55 Cancri Ab
-                 position: [6172040, 3000000],
-                 radius:3000,
-                 mass:1.5623e27,
-                 color: '#f0f'},
-
-                 {velocity: [0, 6547.062824], // 55 Cancri Ac
-                 position: [6359040, 3000000],
-                 radius:3000,
-                 mass:3.2042e26,
-                 color: '#0ff'},
-
-                 {velocity: [0, 3629.3312848], // 55 Cancri Af
-                 position: [7168376, 3000000],
-                 radius:3000,
-                 mass:2.7302e26,
-                 color: '#ff0'},
-
-                 {velocity: [0, 1335.25503], // 55 Cancri Ad
-                 position: [14631920, 3000000],
-                 radius:3000,
-                 mass:7.2712e27,
-                 color: '#f0f'},
-
-                 {velocity: [0, 98.2827558], 
-                 position: [1599240000, 3000000], // 55 Cancri B
-                 radius:3000,
-                 mass:2.58557e29,
-                 color: '#ff0'}
-             ];
-             break;
-        case 5:
-            // 51 Pegasi System
-            // Only included because it was the first extrasolar planetary system discovered
-            // The planet spirals into the star
-            this.bodies = [
-                 {velocity: [0, 0], // 51 Pegasi
-                 position: [6000000, 3000000],
-                 radius:6960,
-                 mass:2.1082e30,
-                 color: '#ff0'},
-
-                 {velocity: [0, 14758.078936], // 51 Pegasi a
-                 position: [6078839, 3000000],
-                 radius:3000,
-                 mass:8.9491e26,
-                 color: '#f00'}
-             ];
-             break;
-        case 6:
-            // 47 Ursae Majoris System
-            this.bodies = [
-                 {velocity: [0, 0], // 47 Ursae Majoris
-                 position: [6000000, 3000000],
-                 radius:6960,
-                 mass:2.148e30,
-                 color: '#ff0'},
-
-                 {velocity: [0, 2359.8596376], // 47 Ursae Majoris b
-                 position: [9141600, 3000000],
-                 radius:3000,
-                 mass:4.79688e27,
-                 color: '#f0f'},
-
-                 {velocity: [0, 1802.37257], // 47 Ursae Majoris c
-                 position: [11385600, 3000000],
-                 radius:3000,
-                 mass:1.02384e27,
-                 color: '#0ff'},
-
-                 {velocity: [0, 1004.0765516], // 47 Ursae Majoris d
-                 position: [23353600, 3000000],
-                 radius:3000,
-                 mass:3.10944e27,
-                 color: '#f00'}
-             ];
-             break;
-        case 7:
-            // Upsilon Andromidae System
-            // Upsilon Andromidae b is unstable
-            this.bodies = [
-                 {velocity: [0, 0], // Upsilon Andromidae
-                 position: [6000000, 3000000],
-                 radius:6960,
-                 mass:2.5468e30,
-                 color: '#ff0'},
-
-                 {velocity: [0, 4082.38952], // Upsilon Andromidae c
-                 position: [7244672, 3000000],
-                 radius:3000,
-                 mass:3.6453e27,
-                 color: '#f0f'},
-
-                 {velocity: [0, 2341.07776], // Upsilon Andromidae d
-                 position: [9784880, 3000000],
-                 radius:3000,
-                 mass:7.8412e27,
-                 color: '#0ff'}
-             ];
-             break;
-        case 8:
             this.bodies = [
 // A "static" pyramid as defined by the following bodies will eventually acquire angular momentum
 // showing how errors in the integrator can build up to allow non-physical behavior
@@ -968,46 +780,7 @@ MainAssistant.prototype.loadBodies = function(id) {
                  */
             ];
             break;
-        case 10:
-            this.bodies = [
-                 {velocity: [0, 0],
-                 position: [0, 300000], // try at 11
-                 radius:80000,
-                 mass:1e28,
-                 color: '#f0f'},
-
-                 {velocity: [-10000, 0],
-                 position: [800000, 300000], // try at 11
-                 radius:50000,
-                 mass:5e20,
-                 color: '#ff0'},
-
-                 {velocity: [-10000, 0],
-                 position: [890000, 300000], // try at 11
-                 radius:40000,
-                 mass:4e20,
-                 color: '#ff0'},
-
-                 {velocity: [-10000, 0],
-                 position: [960000, 300000], // try at 11
-                 radius:30000,
-                 mass:3e20,
-                 color: '#ff0'},
-
-                 {velocity: [-10000, 0],
-                 position: [1010000, 300000], // try at 11
-                 radius:20000,
-                 mass:2e20,
-                 color: '#ff0'},
-
-                 {velocity: [-10000, 0],
-                 position: [1040000, 300000], // try at 11
-                 radius:10000,
-                 mass:1e20,
-                 color: '#ff0'},
-            ];
-            break;
-        case 11:
+        case 4:
             this.bodies = [
                  {velocity: [0, 0],
                  position: [100000, 300000],
@@ -1034,7 +807,7 @@ MainAssistant.prototype.loadBodies = function(id) {
                  color: '#ff0'},
             ];
             break;
-        case 9:
+        case 5:
         default:
             this.bodies = [];
             break;
