@@ -1,4 +1,5 @@
 function MainAssistant() {
+	Mojo.Log.info("AUDIO API: %j", new Audio());
 	this.ctx = null;
 	this.gravConstant = 8.14496e-18; // Calculated so that an Earth at 1e-5 times its actual distance (with 1px = 1m) 
                                // has an orbital velocity such at its period is 60s (so G is in pks units) (with no trace).
