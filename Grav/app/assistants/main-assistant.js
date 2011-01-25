@@ -44,6 +44,7 @@ MainAssistant.prototype.setup = function() {
 	this.stageActivateHandlerH = this.stageActivateHandler.bind(this);
 	this.stageDeactivateHandlerH = this.stageDeactivateHandler.bind(this);
 	this.calculateOrbitBind = this.calculateOrbit.bind(this);
+    this.optionTapHandlerH = this.optionTapHandler.bind(this);
 };
 
 MainAssistant.prototype.activate = function(event) {
@@ -71,12 +72,44 @@ MainAssistant.prototype.activate = function(event) {
 	this.controller.listen(this.controller.get(canvasid), Mojo.Event.dragging, this.dragHandlerH, true);
 	this.controller.listen(this.controller.get(canvasid), Mojo.Event.dragStart, this.dragStartHandlerH, true);
 	this.controller.listen(this.controller.get(canvasid), Mojo.Event.dragEnd, this.dragEndHandlerH, true);
-	this.controller.listen(this.controller.document, Mojo.Event.tap, this.tapHandlerH, true);
+	this.controller.listen(this.controller.get(canvasid), Mojo.Event.tap, this.tapHandlerH, true);
 	this.controller.listen(this.controller.document, Mojo.Event.stageActivate, this.stageActivateHandlerH, true);
 	this.controller.listen(this.controller.document, Mojo.Event.stageDeactivate, this.stageDeactivateHandlerH, true);
+    this.controller.listen(this.controller.get('options_btn'), Mojo.Event.tap, this.optionTapHandlerH, true);
 	this.loadBodies(this.systemIndex);
 	this.calculateOrbit();
 };
+
+MainAssistant.prototype.optionTapHandler = function(event) {
+    Mojo.Log.info("TAPPED THE OPTION BUTTON");
+    var optionsModel = [
+        {
+            label: "Command 1",
+            command: "command-1"
+        },
+        {
+            label: "Command 2",
+            command: "command-2"
+        },
+        {
+            label: "Command 3",
+            command: "command-3"
+        }
+    ];
+    this.controller.popupSubmenu({
+        onChoose: this.optionTapAction,
+        placeNear: event.target,
+        popupClass: 'popup-option',
+        items: optionsModel
+    });
+    event.stop();
+    event.stopPropagation();
+    return false;
+}
+
+MainAssistant.prototype.optionTapAction = function(selection) {
+    Mojo.Log.info("SELECTED OPTION: " + selection);
+}
 
 MainAssistant.prototype.keyDownHandler = function(event) {
     //Mojo.Log.info('KEY EVENT: %j', event.originalEvent);
@@ -275,6 +308,9 @@ MainAssistant.prototype.gestureHandler = function(event) {
         }
     }
     */
+    event.stop();
+    event.stopPropagation();
+    return false;
 }
 
 MainAssistant.prototype.gestureStartHandler = function(event) {
@@ -285,6 +321,9 @@ MainAssistant.prototype.gestureStartHandler = function(event) {
     this.scalingWidth = this.spaceWidth;
     this.scalingX = this.spaceX;
     this.scalingY = this.spaceY;
+    event.stop();
+    event.stopPropagation();
+    return false;
 }
 
 MainAssistant.prototype.gestureEndHandler = function(event) {
@@ -297,6 +336,9 @@ MainAssistant.prototype.gestureEndHandler = function(event) {
     this.spaceX = this.scalingX;
     this.spaceY = this.scalingY;
     */
+    event.stop();
+    event.stopPropagation();
+    return false;
 }
 
 MainAssistant.prototype.dragHandler = function(event) {
@@ -336,14 +378,22 @@ MainAssistant.prototype.dragStartHandler = function(event) {
 
 MainAssistant.prototype.dragEndHandler = function(event) {
 	//Mojo.Log.info("DRAG END HANDLER TRIGGERED: %j", event);
+    event.stop();
+    event.stopPropagation();
+    return false;
 }
 
 MainAssistant.prototype.tapHandler = function(event) {
+    Mojo.Log.info("CALLED THE TAP HANDLER FOR THE CANVAS");
     var x = event.down.x;
     var y = event.down.y;
-	var pos = [(x * (this.spaceWidth / 320)) - this.spaceX, (y * (this.spaceHeight / this.screenHeight)) - this.spaceY];
+    Mojo.Log.info("LOCATION OF TAP: %j", {x: x, y: y});
+	//this.spaceX = this.dragX - (this.spaceWidth * ((this.dragStartX - Event.pointerX(event.move)) / 320));
+	//this.spaceY = this.dragY - (this.spaceHeight * ((this.dragStartY - Event.pointerY(event.move)) / this.screenHeight));
+    
+	var pos = [(this.spaceWidth * (x / 320)) - this.spaceX, (this.spaceHeight * (y / this.screenHeight)) - this.spaceY];
 	var global = this.globalOrigin.add([this.spaceX, this.spaceY]);
-	pos = pos.subtract(this.globalOrigin).rotate(-this.angle).add(this.globalOrigin);
+	pos = pos.subtract(global).rotate(-this.angle).add(global);
     this.addBody(pos[0], pos[1], this.newBodyMass, false);
 }
 
@@ -867,14 +917,24 @@ MainAssistant.prototype.loadBodies = function(id) {
 MainAssistant.prototype.deactivate = function(event) {
 	Mojo.Event.stopListening(this.controller.document, Mojo.Event.keydown, this.keyDownHandlerH);
 	Mojo.Event.stopListening(this.controller.document, Mojo.Event.keyup, this.keyUpHandlerH);
-	this.controller.stopListening(this.controller.document, Mojo.Event.tap, this.tapHandlerH);
 	this.controller.stopListening(this.controller.document, Mojo.Event.stageActivate, this.stageActivateHandlerH);
 	this.controller.stopListening(this.controller.document, Mojo.Event.stageDeactivate, this.stageDeactivateHandlerH);
+    this.controller.stopListening(this.controller.get('options_btn'), Mojo.Event.tap, this.optionTapHandlerH);
+    var canvasid = 'canvas400';
     if (this.screenHeight == 400) {
-        this.controller.stopListening(this.controller.get('canvas400'), Mojo.Event.flick, this.flickHandlerH);
+        canvasid = 'canvas400';
     } else if (this.screenHeight == 480) {
-        this.controller.stopListening(this.controller.get('canvas480'), Mojo.Event.flick, this.flickHandlerH);
+        canvasid = 'canvas480';
     }
+    this.controller.stopListening(this.controller.get(canvasid), Mojo.Event.flick, this.flickHandlerH);
+	this.controller.stopListening(this.controller.get(canvasid), Mojo.Event.tap, this.tapHandlerH);
+	this.controller.stopListening(this.controller.get(canvasid), 'gesturechange', this.gestureHandlerH, true);
+	this.controller.stopListening(this.controller.get(canvasid), 'gesturestart', this.gestureStartHandlerH, true);
+	this.controller.stopListening(this.controller.get(canvasid), 'gestureend', this.gestureEndHandlerH, true);
+	this.controller.stopListening(this.controller.get(canvasid), Mojo.Event.dragging, this.dragHandlerH, true);
+	this.controller.stopListening(this.controller.get(canvasid), Mojo.Event.dragStart, this.dragStartHandlerH, true);
+	this.controller.stopListening(this.controller.get(canvasid), Mojo.Event.dragEnd, this.dragEndHandlerH, true);
+	this.controller.stopListening(this.controller.get(canvasid), Mojo.Event.tap, this.tapHandlerH, true);
 };
 
 MainAssistant.prototype.cleanup = function(event) {

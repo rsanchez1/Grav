@@ -9,3 +9,24 @@ body.palm-default {
 	left: 0px;
 	top: 0px;
 }
+
+#grav_main {
+    position: relative;
+    width: 100%;
+    height: 100%;
+}
+
+#options_btn {
+    position: fixed;
+    bottom: 0px;
+    right: 0px;
+    margin: 5px;
+	background: url(../images/icon_options.png) top left no-repeat;
+    height: 32px;
+    width: 32px;
+    z-index: 9999 !important;
+}
+
+.popup-option {
+    width: 180px;
+}
