@@ -38,6 +38,9 @@ MainAssistant.prototype.setup = function() {
     this.gestureHandlerH = this.gestureHandler.bind(this);
     this.gestureStartHandlerH = this.gestureStartHandler.bind(this);
     this.gestureEndHandlerH = this.gestureEndHandler.bind(this);
+	this.dragHandlerH = this.dragHandler.bind(this);
+	this.dragStartHandlerH = this.dragStartHandler.bind(this);
+	this.dragEndHandlerH = this.dragEndHandler.bind(this);
 	this.stageActivateHandlerH = this.stageActivateHandler.bind(this);
 	this.stageDeactivateHandlerH = this.stageDeactivateHandler.bind(this);
 	this.calculateOrbitBind = this.calculateOrbit.bind(this);
@@ -55,17 +58,19 @@ MainAssistant.prototype.activate = function(event) {
 	this.spaceHeight = this.screenHeight * 1610.51;
 	Mojo.Event.listen(this.controller.document, Mojo.Event.keydown, this.keyDownHandlerH, true);
 	Mojo.Event.listen(this.controller.document, Mojo.Event.keyup, this.keyUpHandlerH, true);
+	var canvasid = 'canvas400';
     if (this.screenHeight == 400) {
-        this.controller.listen(this.controller.get('canvas400'), Mojo.Event.flick, this.flickHandlerH, true);
-        this.controller.listen(this.controller.get('canvas400'), 'gesturechange', this.gestureHandlerH, true);
-        this.controller.listen(this.controller.get('canvas400'), 'gesturestart', this.gestureStartHandlerH, true);
-        this.controller.listen(this.controller.get('canvas400'), 'gestureend', this.gestureEndHandlerH, true);
+		canvasid = 'canvas400';
     } else if (this.screenHeight == 480) {
-        this.controller.listen(this.controller.get('canvas480'), Mojo.Event.flick, this.flickHandlerH, true);
-        this.controller.listen(this.controller.get('canvas480'), 'gesturechange', this.gestureHandlerH, true);
-        this.controller.listen(this.controller.get('canvas480'), 'gesturestart', this.gestureStartHandlerH, true);
-        this.controller.listen(this.controller.get('canvas480'), 'gestureend', this.gestureEndHandlerH, true);
+		canvasid = 'canvas480';
     }
+	this.controller.listen(this.controller.get(canvasid), Mojo.Event.flick, this.flickHandlerH, true);
+	this.controller.listen(this.controller.get(canvasid), 'gesturechange', this.gestureHandlerH, true);
+	this.controller.listen(this.controller.get(canvasid), 'gesturestart', this.gestureStartHandlerH, true);
+	this.controller.listen(this.controller.get(canvasid), 'gestureend', this.gestureEndHandlerH, true);
+	this.controller.listen(this.controller.get(canvasid), Mojo.Event.dragging, this.dragHandlerH, true);
+	this.controller.listen(this.controller.get(canvasid), Mojo.Event.dragStart, this.dragStartHandlerH, true);
+	this.controller.listen(this.controller.get(canvasid), Mojo.Event.dragEnd, this.dragEndHandlerH, true);
 	this.controller.listen(this.controller.document, Mojo.Event.tap, this.tapHandlerH, true);
 	this.controller.listen(this.controller.document, Mojo.Event.stageActivate, this.stageActivateHandlerH, true);
 	this.controller.listen(this.controller.document, Mojo.Event.stageDeactivate, this.stageDeactivateHandlerH, true);
@@ -212,7 +217,7 @@ MainAssistant.prototype.flickHandler = function(event) {
         if (magnitudeY > 6) {
             magnitudeY = 6;
         }
-        this.spaceY += this.spaceWidth * ((-(y < 0) || (+(y > 0))) * (5 * magnitudeY / 30));
+        this.spaceY += this.spaceHeight * ((-(y < 0) || (+(y > 0))) * (5 * magnitudeY / 30));
     }
     if (this.isPaused && (magnitudeX > 0 || magnitudeY > 0)) {
         var scale = this.spaceWidth / 320;
@@ -281,6 +286,7 @@ MainAssistant.prototype.gestureStartHandler = function(event) {
     this.scalingX = this.spaceX;
     this.scalingY = this.spaceY;
 }
+
 MainAssistant.prototype.gestureEndHandler = function(event) {
     //Mojo.Log.info('GESTURE END EVENT TRIGGERED: %j', event);
     Mojo.Log.info('GESTURE END TRIGGERED');
@@ -291,6 +297,45 @@ MainAssistant.prototype.gestureEndHandler = function(event) {
     this.spaceX = this.scalingX;
     this.spaceY = this.scalingY;
     */
+}
+
+MainAssistant.prototype.dragHandler = function(event) {
+	//Mojo.Log.info("DRAGGING HANDLER TRIGGERED: %j", event);
+	/*
+	for (var i in event) {
+		Mojo.Log.info("PROPERTY OF THE DRAG START EVENT: " + i);
+	}
+	*/
+
+	this.spaceX = this.dragX - (this.spaceWidth * ((this.dragStartX - Event.pointerX(event.move)) / 320));
+	this.spaceY = this.dragY - (this.spaceHeight * ((this.dragStartY - Event.pointerY(event.move)) / this.screenHeight));
+
+    if (this.isPaused) {
+        var scale = this.spaceWidth / 320;
+        this.ctx.fillStyle = 'rgb(0,0,0)';
+        this.ctx.fillRect(0, 0, 320, this.screenHeight);
+        for (var i = this.bodyCount; i--;) {
+            var radius = this.bodies[i].radius / scale;
+            var position = this.bodies[i].position.add([this.spaceX, this.spaceY]).multiply(1/scale);
+            this.drawBody(position[0], position[1], radius, this.bodies[i].color, this.ctx);
+        }
+    }
+    event.stop();
+    event.stopPropagation();
+    return false;
+}
+
+MainAssistant.prototype.dragStartHandler = function(event) {
+	//Mojo.Log.info("DRAG START HANDLER TRIGGERED: %j", event);
+	// CHECK THE DISTANCE PROPERTY HERE
+	this.dragX = this.spaceX;
+	this.dragY = this.spaceY;
+	this.dragStartX = Event.pointerX(event.move);
+	this.dragStartY = Event.pointerY(event.move);
+}
+
+MainAssistant.prototype.dragEndHandler = function(event) {
+	//Mojo.Log.info("DRAG END HANDLER TRIGGERED: %j", event);
 }
 
 MainAssistant.prototype.tapHandler = function(event) {
