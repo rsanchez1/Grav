@@ -1,5 +1,4 @@
 function MainAssistant() {
-	Mojo.Log.info("AUDIO API: %j", new Audio());
 	this.ctx = null;
 	this.gravConstant = 8.14496e-18; // Calculated so that an Earth at 1e-5 times its actual distance (with 1px = 1m) 
                                // has an orbital velocity such at its period is 60s (so G is in pks units) (with no trace).
@@ -84,18 +83,40 @@ MainAssistant.prototype.optionTapHandler = function(event) {
     Mojo.Log.info("TAPPED THE OPTION BUTTON");
     var optionsModel = [
         {
-            label: "Command 1",
-            command: "command-1"
+            label: "Toggle Trace",
+            command: "toggle-trace"
         },
         {
-            label: "Command 2",
-            command: "command-2"
+            label: "Toggle Bounce",
+            command: "toggle-bounce"
         },
         {
-            label: "Command 3",
-            command: "command-3"
+            label: "Rotate Frame",
+            command: "rotate-frame"
+        },
+        {
+            label: "Toggle Body Sizes",
+            command: "toggle-mass"
+        },
+        {
+            label: "Load Next System",
+            command: "load-system"
+        },
+        {
+            label: "Empty Space",
+            command: "empty-space"
         }
     ];
+    if (this.alpha < 1) {
+        optionsModel[0].chosen = true;
+    }
+    if (this.isBounce) {
+        optionsModel[1].chosen = true;
+    }
+    if (this.isRotating) {
+        optionsModel[2].chosen = true;
+    }
+
     this.controller.popupSubmenu({
         onChoose: this.optionTapAction,
         placeNear: event.target,
@@ -109,6 +130,36 @@ MainAssistant.prototype.optionTapHandler = function(event) {
 
 MainAssistant.prototype.optionTapAction = function(selection) {
     Mojo.Log.info("SELECTED OPTION: " + selection);
+    switch (selection) {
+        case 'toggle-trace':
+            if (this.alpha < 1) {
+                this.alpha = 1;
+            } else {
+                this.alpha = .05
+            }
+            break;
+        case 'toggle-bounce':
+            this.isBounce = !this.isBounce;
+            break;
+        case 'rotate-frame':
+            this.isRotating = !this.isRotating;
+            break;
+        case 'toggle-mass':
+            this.newBodyMass = 1/this.newBodyMass;
+            break;
+        case 'load-system':
+            this.systemIndex++;
+            if (this.systemIndex > 4) {
+                this.systemIndex = 0;
+            }
+            this.loadBodies(this.systemIndex);
+            break;
+        case 'empty-space':
+            this.bodies = [];
+            break;
+        default:
+            break;
+    }
 }
 
 MainAssistant.prototype.keyDownHandler = function(event) {
@@ -179,7 +230,7 @@ MainAssistant.prototype.keyDownHandler = function(event) {
 
     if (ek == 32) { // Spacebar
         this.systemIndex++;
-        if (this.systemIndex > 11) {
+        if (this.systemIndex > 4) {
             this.systemIndex = 0;
         }
         this.loadBodies(this.systemIndex);
@@ -610,7 +661,8 @@ MainAssistant.prototype.calculateOrbit = function() {
     }
     bodiesLength = this.bodies.length;
     var scale = this.spaceWidth / 320;
-	if (this.alpha >= 0.001) {
+	//if (this.alpha >= 0.001 && this.alpha < 1) {
+    if (this.alpha == 1) {
 		//this.ctx.fillStyle = 'rgba(0,0,0 ' + this.alpha + ')';
 		this.ctx.fillStyle = 'rgb(0,0,0)';
 		this.ctx.fillRect(0, 0, 320, this.screenHeight);
@@ -632,9 +684,11 @@ MainAssistant.prototype.calculateOrbit = function() {
 		}
 		position = position.multiply(1/scale);
         this.drawBody(position[0], position[1], radius, this.bodies[i].color, this.ctx);
+        /*
         if (this.alpha < 1) {
             this.drawLine(position[0], position[1], firstPosition[0], firstPosition[1], radius, this.bodies[i].color, this.ctx);
         }
+        */
         com = com.add(position.multiply(this.bodies[i].mass));
         totalMass += this.bodies[i].mass;
     }
@@ -692,7 +746,7 @@ MainAssistant.prototype.addBody = function(x, y, newMass, randomOrientation) {
         com = com.multiply(1/totalMass);
         vel = vel.multiply(1/totalMass);
         //velocity = mostMassiveBody.position.subtract(newPosition).toUnitVector().rotate(-Math.PI / 2).multiply(Math.sqrt((this.gravConstant * mostMassiveBody.mass) / mostMassiveBody.position.distanceFrom(newPosition))).add(mostMassiveBody.velocity);
-        velocity = com.subtract(newPosition).toUnitVector().rotate(-Math.PI / 2).multiply(Math.sqrt((this.gravConstant * totalMass) / com.distanceFrom(newPosition))).add(vel);
+        velocity = com.subtract(newPosition).toUnitVector().rotate(Math.PI / 2).multiply(Math.sqrt((this.gravConstant * totalMass) / com.distanceFrom(newPosition))).add(vel);
         randomOrientation = false;
     } else {
         velocity = [0,0];
