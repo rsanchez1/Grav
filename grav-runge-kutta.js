@@ -108,7 +108,8 @@ function addBodyClick(ev) {
     }
     var pos = [(x * (rectDimensions[2] / windowWidth)) - rectDimensions[0], (y * (rectDimensions[3] / windowHeight)) - rectDimensions[1]];
     var global = globalOrigin.add([rectDimensions[0], rectDimensions[1]]);
-    pos = pos.subtract(globalOrigin).rotate(-angle).add(globalOrigin);
+    var thisAngle = isRotating ? angle : 0;
+    pos = pos.subtract(globalOrigin).rotate(-thisAngle).add(globalOrigin);
     addBody(pos[0], pos[1], +document.getElementById('newmass').value, randomOrientation);
 }
 
