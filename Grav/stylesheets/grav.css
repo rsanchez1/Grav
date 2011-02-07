@@ -27,6 +27,24 @@ body.palm-default {
     z-index: 9999 !important;
 }
 
+#play_btn {
+    position: fixed;
+    bottom: 0px;
+    left: 0px;
+    margin: 5px;
+    height: 32px;
+    width: 32px;
+    z-index: 9999 !important;
+}
+
+.play {
+    background: url(../images/play.png) top left no-repeat;
+}
+
+.pause {
+    background: url(../images/pause.png) top left no-repeat;
+}
+
 .popup-option {
     width: 240px;
 }

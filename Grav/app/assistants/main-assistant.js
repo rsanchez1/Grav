@@ -5,6 +5,7 @@ function MainAssistant() {
                                // The "Sun" has its normal mass in kg.
 	this.isBounce = true;
 	this.isPaused = false;
+        this.isButtonPaused = false;
 	this.antiFlicker = false;
 	this.isRotating = false;
 	this.angle = 0;
@@ -44,6 +45,7 @@ MainAssistant.prototype.setup = function() {
 	this.stageDeactivateHandlerH = this.stageDeactivateHandler.bind(this);
 	this.calculateOrbitBind = this.calculateOrbit.bind(this);
     this.optionTapHandlerH = this.optionTapHandler.bind(this);
+    this.playTapHandlerH = this.playTapHandler.bind(this);
 };
 
 MainAssistant.prototype.activate = function(event) {
@@ -75,6 +77,7 @@ MainAssistant.prototype.activate = function(event) {
 	this.controller.listen(this.controller.document, Mojo.Event.stageActivate, this.stageActivateHandlerH, true);
 	this.controller.listen(this.controller.document, Mojo.Event.stageDeactivate, this.stageDeactivateHandlerH, true);
     this.controller.listen(this.controller.get('options_btn'), Mojo.Event.tap, this.optionTapHandlerH, true);
+    this.controller.listen(this.controller.get('play_btn'), Mojo.Event.tap, this.playTapHandlerH, true);
 	this.loadBodies(this.systemIndex);
 	this.calculateOrbit();
 };
@@ -99,8 +102,30 @@ MainAssistant.prototype.optionTapHandler = function(event) {
             command: "toggle-mass"
         },
         {
-            label: "Load Next System",
-            command: "load-system"
+            label: "Load System",
+            command: "",
+            items: [
+            {
+                label: "Two-Body",
+                command: "load-twobody"
+            },
+            {
+                label: "Sun-Jupiter",
+                command: "load-sunjupiter"
+            },
+            {
+                label: "Four-Body",
+                command: "load-fourbody"
+            },
+            {
+                label: "Pyramid",
+                command: "load-pyramid"
+            },
+            {
+                label: "Newton's Gravity Cradle",
+                command: "load-cradle"
+            }
+            ]
         },
         {
             label: "Empty Space",
@@ -116,6 +141,7 @@ MainAssistant.prototype.optionTapHandler = function(event) {
     if (this.isRotating) {
         optionsModel[2].chosen = true;
     }
+    this.isPaused = true;
 
     this.controller.popupSubmenu({
         onChoose: this.optionTapAction,
@@ -155,11 +181,46 @@ MainAssistant.prototype.optionTapAction = function(selection) {
             this.loadBodies(this.systemIndex);
             break;
         case 'empty-space':
-            this.bodies = [];
+            this.loadBodies(-1);
+            break;
+        case 'load-twobody':
+            this.loadBodies(0);
+            break;
+        case 'load-sunjupiter':
+            this.loadBodies(1);
+            break;
+        case 'load-fourbody':
+            this.loadBodies(2);
+            break;
+        case 'load-pyramid':
+            this.loadBodies(3);
+            break;
+        case 'load-cradle':
+            this.loadBodies(4);
             break;
         default:
             break;
     }
+    if (!this.isButtonPaused) {
+        this.isPaused = false;
+        this.calculateOrbit();
+    }
+}
+
+MainAssistant.prototype.playTapHandler = function(event) {
+    if (this.isPaused) {
+        this.isPaused = false;
+        this.isButtonPaused = false;
+        this.controller.get('play_btn').removeClassName('play').addClassName('pause');
+	this.calculateOrbit();
+    } else {
+        this.isPaused = true;
+        this.isButtonPaused = true;
+        this.controller.get('play_btn').removeClassName('pause').addClassName('play');
+    }
+    event.stop();
+    event.stopPropagation();
+    return false;
 }
 
 MainAssistant.prototype.keyDownHandler = function(event) {
@@ -213,10 +274,7 @@ MainAssistant.prototype.keyDownHandler = function(event) {
     }
     // pause
     if (isP) {
-        this.isPaused = !this.isPaused;
-        if (!this.isPaused) {
-            this.calculateOrbit();
-        }
+        this.playTapHandler(event);
     }
     // toggle bounce
     if (isB) {
@@ -444,13 +502,17 @@ MainAssistant.prototype.tapHandler = function(event) {
     
 	var pos = [(this.spaceWidth * (x / 320)) - this.spaceX, (this.spaceHeight * (y / this.screenHeight)) - this.spaceY];
 	var global = this.globalOrigin.add([this.spaceX, this.spaceY]);
-	pos = pos.subtract(global).rotate(-this.angle).add(global);
+        var angle = this.isRotating ? this.angle : 0;
+	pos = pos.subtract(global).rotate(-angle).add(global);
     this.addBody(pos[0], pos[1], this.newBodyMass, false);
 }
 
 MainAssistant.prototype.stageActivateHandler = function(event) {
+    if (!this.isButtonPaused) {
+        // do not automatically start if it has been paused by the user
 	this.isPaused = false;
 	this.calculateOrbit();
+    }
 }
 
 MainAssistant.prototype.stageDeactivateHandler = function(event) {
@@ -974,6 +1036,7 @@ MainAssistant.prototype.deactivate = function(event) {
 	this.controller.stopListening(this.controller.document, Mojo.Event.stageActivate, this.stageActivateHandlerH);
 	this.controller.stopListening(this.controller.document, Mojo.Event.stageDeactivate, this.stageDeactivateHandlerH);
     this.controller.stopListening(this.controller.get('options_btn'), Mojo.Event.tap, this.optionTapHandlerH);
+    this.controller.stopListening(this.controller.get('play_btn'), Mojo.Event.tap, this.playTapHandlerH);
     var canvasid = 'canvas400';
     if (this.screenHeight == 400) {
         canvasid = 'canvas400';
