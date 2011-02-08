@@ -8,6 +8,8 @@ function MainAssistant() {
         this.isButtonPaused = false;
 	this.antiFlicker = false;
 	this.isRotating = false;
+    this.isDragging = false;
+    this.isGesturing = false;
 	this.angle = 0;
 	this.angularVelocity = 0;
 	this.globalOrigin = [0, 0];
@@ -73,7 +75,7 @@ MainAssistant.prototype.activate = function(event) {
 	this.controller.listen(this.controller.get(canvasid), Mojo.Event.dragging, this.dragHandlerH, true);
 	this.controller.listen(this.controller.get(canvasid), Mojo.Event.dragStart, this.dragStartHandlerH, true);
 	this.controller.listen(this.controller.get(canvasid), Mojo.Event.dragEnd, this.dragEndHandlerH, true);
-	this.controller.listen(this.controller.get(canvasid), Mojo.Event.tap, this.tapHandlerH, true);
+	this.controller.listen(this.controller.get(canvasid), Mojo.Event.tap, this.tapHandlerH, false);
 	this.controller.listen(this.controller.document, Mojo.Event.stageActivate, this.stageActivateHandlerH, true);
 	this.controller.listen(this.controller.document, Mojo.Event.stageDeactivate, this.stageDeactivateHandlerH, true);
     this.controller.listen(this.controller.get('options_btn'), Mojo.Event.tap, this.optionTapHandlerH, true);
@@ -425,6 +427,7 @@ MainAssistant.prototype.gestureHandler = function(event) {
 MainAssistant.prototype.gestureStartHandler = function(event) {
     //Mojo.Log.info('GESTURE START EVENT TRIGGERED: %j', event);
     Mojo.Log.info('GESTURE START TRIGGERED: ' + event.scale);
+    this.isGesturing = true;
     this.gestureScale = event.scale;
     this.scalingHeight = this.spaceHeight;
     this.scalingWidth = this.spaceWidth;
@@ -438,6 +441,7 @@ MainAssistant.prototype.gestureStartHandler = function(event) {
 MainAssistant.prototype.gestureEndHandler = function(event) {
     //Mojo.Log.info('GESTURE END EVENT TRIGGERED: %j', event);
     Mojo.Log.info('GESTURE END TRIGGERED');
+    this.isGesturing = false;
     this.gestureScale = 0;
     /*
     this.spaceHeight = this.scalingHeight;
@@ -477,8 +481,9 @@ MainAssistant.prototype.dragHandler = function(event) {
 }
 
 MainAssistant.prototype.dragStartHandler = function(event) {
-	//Mojo.Log.info("DRAG START HANDLER TRIGGERED: %j", event);
+	Mojo.Log.info("DRAG START HANDLER TRIGGERED");
 	// CHECK THE DISTANCE PROPERTY HERE
+    this.isDragging = true;
 	this.dragX = this.spaceX;
 	this.dragY = this.spaceY;
 	this.dragStartX = Event.pointerX(event.move);
@@ -486,7 +491,8 @@ MainAssistant.prototype.dragStartHandler = function(event) {
 }
 
 MainAssistant.prototype.dragEndHandler = function(event) {
-	//Mojo.Log.info("DRAG END HANDLER TRIGGERED: %j", event);
+	Mojo.Log.info("DRAG END HANDLER TRIGGERED");
+    this.isDragging = false;
     event.stop();
     event.stopPropagation();
     return false;
@@ -494,6 +500,14 @@ MainAssistant.prototype.dragEndHandler = function(event) {
 
 MainAssistant.prototype.tapHandler = function(event) {
     Mojo.Log.info("CALLED THE TAP HANDLER FOR THE CANVAS");
+    if (this.isDragging) {
+        this.isDragging = false;
+        return false;
+    }
+    if (this.isGesturing) {
+        this.isGesturing = false;
+        return false;
+    }
     var x = event.down.x;
     var y = event.down.y;
     Mojo.Log.info("LOCATION OF TAP: %j", {x: x, y: y});
@@ -501,9 +515,14 @@ MainAssistant.prototype.tapHandler = function(event) {
 	//this.spaceY = this.dragY - (this.spaceHeight * ((this.dragStartY - Event.pointerY(event.move)) / this.screenHeight));
     
 	var pos = [(this.spaceWidth * (x / 320)) - this.spaceX, (this.spaceHeight * (y / this.screenHeight)) - this.spaceY];
-	var global = this.globalOrigin.add([this.spaceX, this.spaceY]);
+    Mojo.Log.info("POSITION CALCULATED: %j", pos);
+    Mojo.Log.info("GLOBAL ORIGIN: %j", this.globalOrigin);
+	//var global = this.globalOrigin.add([this.spaceX, this.spaceY]);
+    var global = this.globalOrigin;
+    Mojo.Log.info("GLOBAL CALCULATED: %j", global);
         var angle = this.isRotating ? this.angle : 0;
 	pos = pos.subtract(global).rotate(-angle).add(global);
+    Mojo.Log.info("NEW POSITION CALCULATAED: %j", pos);
     this.addBody(pos[0], pos[1], this.newBodyMass, false);
 }
 
