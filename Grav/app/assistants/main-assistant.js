@@ -392,8 +392,19 @@ MainAssistant.prototype.gestureHandler = function(event) {
     this.scalingWidth = this.spaceWidth/event.scale;
     this.scalingHeight = this.spaceHeight/event.scale;
     */
+    this.spaceX = this.scalingX + this.scalingWidth * ((-(change > 0) * .2 || +(change < 0) * 2) * (1 / event.scale));
+    //this.spaceY = this.scalingY + this.scalingHeight * ((-(change > 0) || + (change < 0)) * (2 / event.scale));
     this.spaceWidth = this.scalingWidth/event.scale;
     this.spaceHeight = this.scalingHeight/event.scale;
+
+    // (event.scale / 2) ?
+
+/*
+    this.spaceX = this.spaceX + this.spaceWidth * ((-(isI) * (45 / 990)) || (+(isO) * (45 / 900)) || ((-(isD) || (+(isA))) * (1 / 30)));
+    this.spaceY = this.spaceY + this.spaceHeight * (((-(isI) || +(isO)) * (45 / 990)) || ((-(isS) || (+(isW))) * (1 / 30)));
+    this.spaceWidth = this.spaceWidth * (+(isO) * 1.10) || (+(isI) * (90 / 99)) || 1;
+    this.spaceHeight = this.spaceHeight * (+(isO) * 1.10) || (+(isI) * (90 / 99)) || 1;
+    *
     /*
     this.spaceX = this.scalingX + (this.scalingWidth * ((-(change > 0) || (+(change < 0))));
     this.spaceY = this.scalingY + (this.scalingHeight * ((-(change > 0) || +(change < 0) * (1/(event.scale*20)))));
