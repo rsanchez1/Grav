@@ -388,48 +388,29 @@ MainAssistant.prototype.gestureHandler = function(event) {
     // scales by 8 clicks in either direction (.1 change out, .375 change in)
     var change = event.scale - this.gestureScale; // greater than 0 means zooming in
     this.gestureScale = event.scale;
-    /*
-    this.scalingWidth = this.spaceWidth/event.scale;
-    this.scalingHeight = this.spaceHeight/event.scale;
-    */
-    this.spaceX = this.scalingX + this.scalingWidth * ((-(change > 0) * .2 || +(change < 0) * 2) * (1 / event.scale));
+    //this.spaceX = this.scalingX + this.scalingWidth * ((-(change > 0) * .2 || +(change < 0) * 2) * (1 / event.scale));
     //this.spaceY = this.scalingY + this.scalingHeight * ((-(change > 0) || + (change < 0)) * (2 / event.scale));
     this.spaceWidth = this.scalingWidth/event.scale;
-    this.spaceHeight = this.scalingHeight/event.scale;
-
-    // (event.scale / 2) ?
-
-/*
-    this.spaceX = this.spaceX + this.spaceWidth * ((-(isI) * (45 / 990)) || (+(isO) * (45 / 900)) || ((-(isD) || (+(isA))) * (1 / 30)));
-    this.spaceY = this.spaceY + this.spaceHeight * (((-(isI) || +(isO)) * (45 / 990)) || ((-(isS) || (+(isW))) * (1 / 30)));
-    this.spaceWidth = this.spaceWidth * (+(isO) * 1.10) || (+(isI) * (90 / 99)) || 1;
-    this.spaceHeight = this.spaceHeight * (+(isO) * 1.10) || (+(isI) * (90 / 99)) || 1;
-    *
-    /*
-    this.spaceX = this.scalingX + (this.scalingWidth * ((-(change > 0) || (+(change < 0))));
-    this.spaceY = this.scalingY + (this.scalingHeight * ((-(change > 0) || +(change < 0) * (1/(event.scale*20)))));
-    */
-    /*
-    if (Math.abs(change) > .2) {
-        var magnitudeChange = Math.floor(Math.abs(change) / .2);
-        for (var i = 0; i < magnitudeChange; i++) {
-            this.spaceX += this.spaceWidth * ((-(change > 0) * (45 / 990)) || (+(change < 0) * (45 / 900)));
-            this.spaceY += this.spaceHeight * ((-(change > 0) || +(change < 0) * (45/990)))
-            this.spaceWidth *= (+(change < 0) * 1.10) || (+(change > 0) * (90/99)) || 1;
-            this.spaceHeight *= (+(change < 0) * 1.10) || (+(change > 0) * (90/99)) || 1;
-        }
-        if (this.isPaused) {
-            var scale = this.spaceWidth / 320;
-            this.ctx.fillStyle = 'rgb(0,0,0)';
-            this.ctx.fillRect(0, 0, 320, this.screenHeight);
-            for (var i = this.bodyCount; i--;) {
-                var radius = this.bodies[i].radius / scale;
-                var position = this.bodies[i].position.add([this.spaceX, this.spaceY]).multiply(1/scale);
-                this.drawBody(position[0], position[1], radius, this.bodies[i].color, this.ctx);
-            }
-        }
+    // for spaceX, if you zoom out (spaceWidth > scalingWidth), then you should increase X
+    // for spaceX, if you zoom in (spaceWidth < scalingWidth), then you should decrease X
+    // for both, change X by half the difference in width
+    var diff = 0;
+    if (this.spaceWidth > this.scalingWidth) {
+        diff = (this.spaceWidth - this.scalingWidth) / 2;
+        this.spaceX = this.scalingX + diff;
+    } else {
+        diff = (this.scalingWidth - this.spaceWidth) / 2;
+        this.spaceX = this.scalingX - diff;
     }
-    */
+    this.spaceHeight = this.scalingHeight/event.scale;
+    diff = 0;
+    if (this.spaceHeight > this.scalingHeight) {
+        diff = (this.spaceHeight - this.scalingHeight) / 2;
+        this.spaceY = this.scalingY + diff;
+    } else {
+        diff = (this.scalingHeight - this.spaceHeight) / 2;
+        this.spaceY = this.scalingY - diff;
+    }
     event.stop();
     event.stopPropagation();
     return false;
@@ -808,7 +789,6 @@ MainAssistant.prototype.addBody = function(x, y, newMass, randomOrientation) {
     var bodiesLength = this.bodies.length;
     if (bodiesLength > 0) {
         // just using the most massive body (body exerting greatest force), instead of COM, for simplicity
-        /*
         var mostMassiveBody = this.bodies[this.bodies.length - 1];
         var massiveIndex = 0;
         var delp = mostMassiveBody.position.subtract(newPosition);
@@ -822,10 +802,11 @@ MainAssistant.prototype.addBody = function(x, y, newMass, randomOrientation) {
                 massDistance = newMassDistance;
             }
         }
+        velocity = mostMassiveBody.position.subtract(newPosition).toUnitVector().rotate(Math.PI / 2).multiply(Math.sqrt((this.gravConstant * mostMassiveBody.mass) / mostMassiveBody.position.distanceFrom(newPosition))).add(mostMassiveBody.velocity);
         // Get the unit vector from the new body to the most massive body (COM), rotate it 90 degrees (either left or right),
         // multiply the unit vector by the velocity (sqrt(GM / R)) to get the velocity vector, then add the velocity vector
         // from the most massive body to get an orbital velocity vector relative to COM
-        */
+        /*
         var com = [0, 0];
         var vel = [0, 0];
         var totalMass = 0;
@@ -837,9 +818,9 @@ MainAssistant.prototype.addBody = function(x, y, newMass, randomOrientation) {
         }
         com = com.multiply(1/totalMass);
         vel = vel.multiply(1/totalMass);
-        //velocity = mostMassiveBody.position.subtract(newPosition).toUnitVector().rotate(-Math.PI / 2).multiply(Math.sqrt((this.gravConstant * mostMassiveBody.mass) / mostMassiveBody.position.distanceFrom(newPosition))).add(mostMassiveBody.velocity);
         velocity = com.subtract(newPosition).toUnitVector().rotate(Math.PI / 2).multiply(Math.sqrt((this.gravConstant * totalMass) / com.distanceFrom(newPosition))).add(vel);
         randomOrientation = false;
+        */
     } else {
         velocity = [0,0];
     }
