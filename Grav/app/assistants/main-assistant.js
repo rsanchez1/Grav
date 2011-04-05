@@ -734,10 +734,10 @@ MainAssistant.prototype.calculateOrbit = function() {
     }
     bodiesLength = this.bodies.length;
     var scale = this.spaceWidth / 320;
-	//if (this.alpha >= 0.001 && this.alpha < 1) {
-    if (this.alpha == 1) {
-		//this.ctx.fillStyle = 'rgba(0,0,0 ' + this.alpha + ')';
-		this.ctx.fillStyle = 'rgb(0,0,0)';
+	if (this.alpha >= 0.001 && this.alpha < 1) {
+    //if (this.alpha == 1) {
+		this.ctx.fillStyle = 'rgba(0,0,0, ' + this.alpha + ')';
+		//this.ctx.fillStyle = 'rgb(0,0,0)';
 		this.ctx.fillRect(0, 0, 320, this.screenHeight);
 	}
     var com = [0, 0];
