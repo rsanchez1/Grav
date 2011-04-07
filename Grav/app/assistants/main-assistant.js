@@ -538,36 +538,32 @@ MainAssistant.prototype.randInt = function(limit) {
  * Add vector mathematics methods to the Array prototype (based on methods found in the Sylvester Javascript Library)
  */
 Array.prototype.add = function(addarray) {
-    //return [this[0] + addarray[0], this[1] + addarray[1], (this[2] || 0) + (addarray[2] || 0)];
-    return [this[0] + addarray[0], this[1] + addarray[1]];
+    return [this[0] + addarray[0], this[1] + addarray[1], (this[2] || 0) + (addarray[2] || 0)];
 }
 Array.prototype.subtract = function(subarray) {
-    //return [this[0] - subarray[0], this[1] - subarray[1], (this[2] || 0) - (subarray[2] || 0)];
-    return [this[0] - subarray[0], this[1] - subarray[1]];
+    return [this[0] - subarray[0], this[1] - subarray[1], (this[2] || 0) - (subarray[2] || 0)];
 }
 Array.prototype.multiply = function(factor) {
-    //return [this[0] * factor, this[1] * factor, (this[2] || 0) * factor];
-    return [this[0] * factor, this[1] * factor];
+    return [this[0] * factor, this[1] * factor, (this[2] || 0) * factor];
 }
 Array.prototype.multiplyEach = function(multArray) {
-    return [this[0] * multArray[0], this[1] * multArray[1]];
+    return [this[0] * multArray[0], this[1] * multArray[1], (this[2] || 0) * (multArray[2] || 0)];
 }
 Array.prototype.dot = function(array2) {
-    //return this[0]*array2[0] + this[1]*array2[1] + (this[2] || 0) * (array2[2] || 0);
-    return this[0]*array2[0] + this[1]*array2[1];
+    return this[0]*array2[0] + this[1]*array2[1] + (this[2] || 0) * (array2[2] || 0);
 }
 Array.prototype.distanceFrom = function(destArray) {
-    //return Math.sqrt(Math.pow(this[0] - destArray[0], 2) + Math.pow(this[1] - destArray[1], 2) + Math.pow((this[2] || 0) - (destArray[2] || 0), 2));
-    return Math.sqrt(Math.pow(this[0] - destArray[0], 2) + Math.pow(this[1] - destArray[1], 2));
+    return Math.sqrt(Math.pow(this[0] - destArray[0], 2) + Math.pow(this[1] - destArray[1], 2) + Math.pow((this[2] || 0) - (destArray[2] || 0), 2));
 }
 Array.prototype.toUnitVector = function() {
-    //var mag = Math.sqrt((this[0] * this[0]) + (this[1] * this[1]) + ((this[2] * this[2]) || 0));
-    //return [this[0] / mag, this[1] / mag, (this[2] || 0) / mag];
-    var mag = Math.sqrt((this[0] * this[0]) + (this[1] * this[1]));
-    return [this[0] / mag, this[1] / mag];
+    var mag = Math.sqrt((this[0] * this[0]) + (this[1] * this[1]) + ((this[2] * this[2]) || 0));
+    return [this[0] / mag, this[1] / mag, (this[2] || 0) / mag];
 }
 Array.prototype.rotate = function(angle) {
     // only used to initialize position of new bodies, see how to adapt to 3d
+    if (this.length == 3 && this[2] == 0) {
+        return this;
+    }
     var cosangle = Math.cos(angle);
     var sinangle = Math.sin(angle);
     return [(cosangle * this[0]) + (-sinangle * this[1]), (sinangle * this[0]) + (cosangle * this[1])];
@@ -615,10 +611,10 @@ MainAssistant.prototype.derivatives = function(state, derivative, getEnergy, col
     for (var i = bodiesLength; i--;) {
         for (var j = i; j--;) {
             var diff = state[i].position.subtract(state[j].position);
-	    if (getColliders) {
-		var radii = this.bodies[i].radius + this.bodies[j].radius;
-		if (diff.dot(diff) <= (radii*radii)) {
-		    // bodies are touching
+            if (getColliders) {
+                var radii = this.bodies[i].radius + this.bodies[j].radius;
+                if (diff.dot(diff) <= (radii*radii)) {
+                    // bodies are touching
                     if (!colliders[i]) {
                         colliders[i] = [];
                     }
@@ -635,8 +631,8 @@ MainAssistant.prototype.derivatives = function(state, derivative, getEnergy, col
                         }
                         contact = true;
                     }
-		}
-	    }
+                }
+            }
             var dist = state[i].position.distanceFrom(state[j].position)
             var mult = this.gravConstant / (dist * dist * dist);
             var multi = -mult * this.bodies[j].mass;
@@ -649,10 +645,10 @@ MainAssistant.prototype.derivatives = function(state, derivative, getEnergy, col
         }
     }
     if (contact) {
-	for (var first in colliders) {
-            colliders1[colliders1.length] = +first;
-            colliders2[colliders2.length] = colliders[first];
-	}
+        for (var first in colliders) {
+                colliders1[colliders1.length] = +first;
+                colliders2[colliders2.length] = colliders[first];
+        }
     }
     return totalEnergy;
 }
@@ -669,11 +665,11 @@ MainAssistant.prototype.calculateOrbit = function() {
     var hh = 0.5; //rk4 half timestep
     var h6 = 1/6;  //rk4 1/6 timestep
     for (var i = bodiesLength; i--;) {
-        derivative1[i] = {position:[0,0], velocity:[0,0]};
-        derivative2[i] = {position:[0,0], velocity:[0,0]};
-        derivative3[i] = {position:[0,0], velocity:[0,0]};
-        derivative4[i] = {position:[0,0], velocity:[0,0]};
-        yt[i] = {position:[0,0], velocity:[0,0]};
+        derivative1[i] = {position:[0,0,0], velocity:[0,0,0]};
+        derivative2[i] = {position:[0,0,0], velocity:[0,0,0]};
+        derivative3[i] = {position:[0,0,0], velocity:[0,0,0]};
+        derivative4[i] = {position:[0,0,0], velocity:[0,0,0]};
+        yt[i] = {position:[0,0,0], velocity:[0,0,0]};
     }
     var massiveColliders = [];
     var smallColliders = [];
@@ -734,10 +730,8 @@ MainAssistant.prototype.calculateOrbit = function() {
     }
     bodiesLength = this.bodies.length;
     var scale = this.spaceWidth / 320;
-	if (this.alpha >= 0.001 && this.alpha < 1) {
-    //if (this.alpha == 1) {
+	if (this.alpha >= 0.001) {
 		this.ctx.fillStyle = 'rgba(0,0,0, ' + this.alpha + ')';
-		//this.ctx.fillStyle = 'rgb(0,0,0)';
 		this.ctx.fillRect(0, 0, 320, this.screenHeight);
 	}
     var com = [0, 0];
@@ -756,6 +750,13 @@ MainAssistant.prototype.calculateOrbit = function() {
 			position = position.subtract(global).rotate(this.angle).add(global);
 		}
 		position = position.multiply(1/scale);
+        /*
+        var gradient = this.ctx.createRadialGradient(position[0], position[1], radius*0.1, position[0], position[1], radius);
+        gradient.addColorStop(0, this.bodies[i].color);
+        gradient.addColorStop(0.95, 'rgba(0,0,0,1.0)');
+        gradient.addColorStop(1, 'rgba(0,0,0,0.0)');
+        this.drawBody(position[0], position[1], radius, this.bodies[i].color, this.ctx);
+        */
         this.drawBody(position[0], position[1], radius, this.bodies[i].color, this.ctx);
         /*
         if (this.alpha < 1) {
