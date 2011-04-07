@@ -561,7 +561,7 @@ Array.prototype.toUnitVector = function() {
 }
 Array.prototype.rotate = function(angle) {
     // only used to initialize position of new bodies, see how to adapt to 3d
-    if (this.length == 3 && this[2] == 0) {
+    if (this.length == 3 && this[2] != 0) {
         return this;
     }
     var cosangle = Math.cos(angle);
