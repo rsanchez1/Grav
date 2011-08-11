@@ -52,13 +52,20 @@ MainAssistant.prototype.setup = function() {
 
 MainAssistant.prototype.activate = function(event) {
 	this.screenHeight = Mojo.Environment.DeviceInfo.screenHeight;
+    this.screenWidth = Mojo.Environment.DeviceInfo.screenWidth;
+    this.scalingWidth = this.screenWidth * 1000;
+    Mojo.Log.info("SCREEN HEIGHT: " + this.screenHeight);
+    Mojo.Log.info("SCREEN WIDTH: " + this.screenWidth);
 	if (this.screenHeight == 400) {
 	    this.controller.get('canvas400').style.display = 'block';
 	    this.ctx = this.controller.get('canvas400').getContext('2d');
 	} else if (this.screenHeight == 480) {
 	    this.controller.get('canvas480').style.display = 'block';
 	    this.ctx = this.controller.get('canvas480').getContext('2d');
-	}
+	} else if (this.screenHeight == 768) {
+        this.controller.get('canvas768').style.display = 'block';
+        this.ctx = this.controller.get('canvas768').getContext('2d');
+    }
 	this.spaceHeight = this.screenHeight * 1610.51;
 	Mojo.Event.listen(this.controller.document, Mojo.Event.keydown, this.keyDownHandlerH, true);
 	Mojo.Event.listen(this.controller.document, Mojo.Event.keyup, this.keyUpHandlerH, true);
@@ -67,6 +74,8 @@ MainAssistant.prototype.activate = function(event) {
 		canvasid = 'canvas400';
     } else if (this.screenHeight == 480) {
 		canvasid = 'canvas480';
+    } else if (this.screenHeight == 768) {
+        canvasid = 'canvas768';
     }
 	this.controller.listen(this.controller.get(canvasid), Mojo.Event.flick, this.flickHandlerH, true);
 	this.controller.listen(this.controller.get(canvasid), 'gesturechange', this.gestureHandlerH, true);
@@ -248,9 +257,9 @@ MainAssistant.prototype.keyDownHandler = function(event) {
     this.spaceHeight *= (+(isO) * 1.10) || (+(isI) * (90 / 99)) || 1;
 
     if (this.isPaused && (isI || isO || isD || isA || isW || isS)) {
-        var scale = this.spaceWidth / 320;
+        var scale = this.spaceWidth / this.screenWidth
         this.ctx.fillStyle = 'rgb(0,0,0)';
-        this.ctx.fillRect(0, 0, 320, this.screenHeight);
+        this.ctx.fillRect(0, 0, this.screenWidth, this.screenHeight);
         for (var i = this.bodyCount; i--;) {
             var radius = this.bodies[i].radius / scale;
             var position = this.bodies[i].position.add([this.spaceX, this.spaceY]).multiply(1/scale);
@@ -364,9 +373,9 @@ MainAssistant.prototype.flickHandler = function(event) {
         this.spaceY += this.spaceHeight * ((-(y < 0) || (+(y > 0))) * (5 * magnitudeY / 30));
     }
     if (this.isPaused && (magnitudeX > 0 || magnitudeY > 0)) {
-        var scale = this.spaceWidth / 320;
+        var scale = this.spaceWidth / this.screenWidth;
         this.ctx.fillStyle = 'rgb(0,0,0)';
-        this.ctx.fillRect(0, 0, 320, this.screenHeight);
+        this.ctx.fillRect(0, 0, this.screenWidth, this.screenHeight);
         for (var i = this.bodyCount; i--;) {
             var radius = this.bodies[i].radius / scale;
             var position = this.bodies[i].position.add([this.spaceX, this.spaceY]).multiply(1/scale);
@@ -454,13 +463,13 @@ MainAssistant.prototype.dragHandler = function(event) {
 	}
 	*/
 
-	this.spaceX = this.dragX - (this.spaceWidth * ((this.dragStartX - Event.pointerX(event.move)) / 320));
+	this.spaceX = this.dragX - (this.spaceWidth * ((this.dragStartX - Event.pointerX(event.move)) / this.screenWidth));
 	this.spaceY = this.dragY - (this.spaceHeight * ((this.dragStartY - Event.pointerY(event.move)) / this.screenHeight));
 
     if (this.isPaused) {
-        var scale = this.spaceWidth / 320;
+        var scale = this.spaceWidth / this.screenWidth;
         this.ctx.fillStyle = 'rgb(0,0,0)';
-        this.ctx.fillRect(0, 0, 320, this.screenHeight);
+        this.ctx.fillRect(0, 0, this.screenWidth, this.screenHeight);
         for (var i = this.bodyCount; i--;) {
             var radius = this.bodies[i].radius / scale;
             var position = this.bodies[i].position.add([this.spaceX, this.spaceY]).multiply(1/scale);
@@ -506,7 +515,7 @@ MainAssistant.prototype.tapHandler = function(event) {
 	//this.spaceX = this.dragX - (this.spaceWidth * ((this.dragStartX - Event.pointerX(event.move)) / 320));
 	//this.spaceY = this.dragY - (this.spaceHeight * ((this.dragStartY - Event.pointerY(event.move)) / this.screenHeight));
     
-	var pos = [(this.spaceWidth * (x / 320)) - this.spaceX, (this.spaceHeight * (y / this.screenHeight)) - this.spaceY];
+	var pos = [(this.spaceWidth * (x / this.screenWidth)) - this.spaceX, (this.spaceHeight * (y / this.screenHeight)) - this.spaceY];
     Mojo.Log.info("POSITION CALCULATED: %j", pos);
     Mojo.Log.info("GLOBAL ORIGIN: %j", this.globalOrigin);
 	//var global = this.globalOrigin.add([this.spaceX, this.spaceY]);
@@ -729,10 +738,10 @@ MainAssistant.prototype.calculateOrbit = function() {
         }
     }
     bodiesLength = this.bodies.length;
-    var scale = this.spaceWidth / 320;
+    var scale = this.spaceWidth / this.screenWidth;
 	if (this.alpha >= 0.001) {
 		this.ctx.fillStyle = 'rgba(0,0,0, ' + this.alpha + ')';
-		this.ctx.fillRect(0, 0, 320, this.screenHeight);
+		this.ctx.fillRect(0, 0, this.screenWidth, this.screenHeight);
 	}
     var com = [0, 0];
     var totalMass = 0;
@@ -837,7 +846,7 @@ MainAssistant.prototype.addBody = function(x, y, newMass, randomOrientation) {
 
 MainAssistant.prototype.loadBodies = function(id) {
     this.ctx.fillStyle = 'rgb(0,0,0)';
-    this.ctx.fillRect(0, 0, 320, this.screenHeight);
+    this.ctx.fillRect(0, 0, this.screenWidth, this.screenHeight);
 	this.angle = 0;
 	this.angularVelocity = 0;
 	this.globalOrigin = [0, 0];
@@ -1054,6 +1063,8 @@ MainAssistant.prototype.deactivate = function(event) {
         canvasid = 'canvas400';
     } else if (this.screenHeight == 480) {
         canvasid = 'canvas480';
+    } else if (this.screenHeight == 768) {
+        canvasid = 'canvas768';
     }
     this.controller.stopListening(this.controller.get(canvasid), Mojo.Event.flick, this.flickHandlerH);
 	this.controller.stopListening(this.controller.get(canvasid), Mojo.Event.tap, this.tapHandlerH);
