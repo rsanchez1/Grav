@@ -1293,6 +1293,31 @@ function loadBodies(id) {
             ];
             break;
         case 9:
+            //kepler 16 system
+             bodies = [
+                {velocity: [0, -1426.28203841528766600893],
+                position: [423913.45703234486238017826, 300000],
+                radius: 6000,
+                mass: 1.37174433e30,
+                color: '#ff0'},
+
+                {velocity: [0, 4858.49415294590510053857],
+                position: [759465.45703234486238017826, 300000],
+                radius: 2000,
+                mass: 4.02255025e29,
+                color: '#ff0'},
+
+                {velocity: [0, 3701.88107120123905059218],
+                position: [1554380, 300000],
+                radius: 500,
+                mass: 6.3199999999999368e26,
+                color: '#fff'}
+            ];
+        break;
+
+
+
+
         default:
             bodies = [];
             break;
