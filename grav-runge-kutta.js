@@ -1312,14 +1312,17 @@ function loadBodies(id) {
                 angularVelocity = -velocity / dist;
             };
             globalOrigin = [500000,300000];
+            //NOTE: sqrt(GM[other]/2R) will get you a circular orbit around the common COM, but the COM will have some linear motion. Will have to compensate by
+            //      subtracting the velocity of the COM from the two bodies
+            //      The third body shouldn't need adjusting since it's orbital velocity was calculated in reference to the COM, which should then be stationary.
              bodies = [
-                {velocity: [0, -1426.20913134484878565427],
+                {velocity: [0, -1427.52795303998368297237],
                 position: [423913.45703234486238017826, 300000],
                 radius: 6000,
                 mass: 1.37174433e30,
                 color: '#ff0'},
 
-                {velocity: [0, 4863.56706001634398089323],
+                {velocity: [0, 4862.24823832120908357513],
                 position: [759465.45703234486238017826, 300000],
                 radius: 2000,
                 mass: 4.02255025e29,
@@ -1328,7 +1331,7 @@ function loadBodies(id) {
                 {velocity: [0, 3701.88107120123905059218],
                 position: [1554380, 300000],
                 radius: 500,
-                mass: 6.3199999999999368/*e26*/,
+                mass: 6.3199999999999368e26,
                 color: '#fff'}
             ];
         break;
