@@ -616,6 +616,7 @@ function calculateOrbit() {
     var scale = rectDimensions[2] / windowWidth;
     var com = [0, 0];
     var totalMass = 0;
+    globalFunc();
     angle += angularVelocity;
     angle %= 2*Math.PI;
     var global = globalOrigin.add([rectDimensions[0], rectDimensions[1]]);
@@ -653,6 +654,10 @@ function calculateOrbit() {
         }
     }
     com = com.multiply(1/totalMass);
+    if (counts === 0) {
+        mycomy = com[1];
+    }
+    globalcomy = com[1];
     drawBody(com[0], com[1], 3, '#fff', paper);
     paper.strokeStyle = '#f77';
     paper.stroke();
@@ -748,6 +753,8 @@ function loadBodies(id) {
     angularVelocity = 0;
     //globalOrigin = [700000,300000];
     globalOrigin = [0, 0];
+    counts = 0;
+    globalFunc = function() {};
     switch (id) {
         case 0:
             // Solar System
@@ -1294,14 +1301,25 @@ function loadBodies(id) {
             break;
         case 9:
             //kepler 16 system
+            angle = 0;
+            console.log("setting angular velocity");
+            angularVelocity = 2 * Math.PI / -335.20038425056584893598;
+            globalFunc = function() {
+                var v = bodies[0].velocity;
+                var p = bodies[0].position.subtract(globalOrigin);
+                var velocity = Math.sqrt(v.dot(v));
+                var dist = Math.sqrt(p.dot(p))
+                angularVelocity = -velocity / dist;
+            };
+            globalOrigin = [500000,300000];
              bodies = [
-                {velocity: [0, -1426.28203841528766600893],
+                {velocity: [0, -1426.20913134484878565427],
                 position: [423913.45703234486238017826, 300000],
                 radius: 6000,
                 mass: 1.37174433e30,
                 color: '#ff0'},
 
-                {velocity: [0, 4858.49415294590510053857],
+                {velocity: [0, 4863.56706001634398089323],
                 position: [759465.45703234486238017826, 300000],
                 radius: 2000,
                 mass: 4.02255025e29,
@@ -1310,7 +1328,7 @@ function loadBodies(id) {
                 {velocity: [0, 3701.88107120123905059218],
                 position: [1554380, 300000],
                 radius: 500,
-                mass: 6.3199999999999368e26,
+                mass: 6.3199999999999368/*e26*/,
                 color: '#fff'}
             ];
         break;
