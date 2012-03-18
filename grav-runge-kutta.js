@@ -1174,6 +1174,12 @@ function loadBodies(id) {
                  mass:3e28,
                  color: '#f00'},
 
+                 {velocity: [4555000, 0],
+                 position: [-9000000000, 450000],
+                 radius:506400000,
+                 mass:9.6e38,
+                 color: '#f00'},
+
                  {velocity: [0, 0],
                  position: [308000, 393530.7436087194],
                  radius:27000,
@@ -1182,6 +1188,18 @@ function loadBodies(id) {
 
                  {velocity: [0, 0],
                  position: [254000, 393530.7436087194],
+                 radius:27000,
+                 mass:3e28,
+                 color: '#ff0'},
+
+                 {velocity: [0, 0],
+                 position: [362000, 393530.7436087194],
+                 radius:27000,
+                 mass:3e28,
+                 color: '#ff0'},
+
+                 {velocity: [0, 0],
+                 position: [416000, 393530.7436087194],
                  radius:27000,
                  mass:3e28,
                  color: '#ff0'},
@@ -1199,13 +1217,55 @@ function loadBodies(id) {
                  color: '#ff0'},
 
                  {velocity: [0, 0],
+                 position: [335000, 440296.1154130791],
+                 radius:27000,
+                 mass:3e28,
+                 color: '#0ff'},
+
+                 {velocity: [0, 0],
+                 position: [389000, 440296.1154130791],
+                 radius:27000,
+                 mass:3e28,
+                 color: '#0ff'},
+
+                 {velocity: [0, 0],
                  position: [281000, 440296.1154130791],
                  radius:27000,
                  mass:3e28,
                  color: '#0ff'},
 
                  {velocity: [0, 0],
+                 position: [308000, 487061.4872174388],
+                 radius:27000,
+                 mass:3e28,
+                 color: '#0ff'},
+
+                 {velocity: [0, 0],
+                 position: [362000, 487061.4872174388],
+                 radius:27000,
+                 mass:3e28,
+                 color: '#0ff'},
+
+                 {velocity: [0, 0],
+                 position: [335000, 533826.8590217985],
+                 radius:27000,
+                 mass:3e28,
+                 color: '#0ff'},
+
+                 {velocity: [0, 0],
                  position: [335000, 346765.3718043597],
+                 radius:27000,
+                 mass:3e28,
+                 color: '#ff0'},
+
+                 {velocity: [0, 0],
+                 position: [389000, 346765.3718043597],
+                 radius:27000,
+                 mass:3e28,
+                 color: '#ff0'},
+
+                 {velocity: [0, 0],
+                 position: [443000, 346765.3718043597],
                  radius:27000,
                  mass:3e28,
                  color: '#ff0'},
@@ -1218,6 +1278,18 @@ function loadBodies(id) {
 
                  {velocity: [0, 0],
                  position: [362000, 300000],
+                 radius:27000,
+                 mass:3e28,
+                 color: '#f00'},
+
+                 {velocity: [0, 0],
+                 position: [416000, 300000],
+                 radius:27000,
+                 mass:3e28,
+                 color: '#f00'},
+
+                 {velocity: [0, 0],
+                 position: [470000, 300000],
                  radius:27000,
                  mass:3e28,
                  color: '#f00'},
