@@ -4,6 +4,22 @@
 // Inspired by the program Planets by Yaron Minsky (planets.homedns.org)
 
 /*
+ * Globals to avoid garbage collection
+ * http://www.scirra.com/blog/76/how-to-write-low-garbage-real-time-javascript
+ */
+derivative1 = [];
+derivative2 = [];
+derivative3 = [];
+derivative4 = []; 
+yt = [];
+massiveColliders = [];
+smallColliders = [];
+hh = 0.5; //rk4 half timestep
+h6 = 1/6;  //rk4 1/6 timestep
+collidingDiff = [0, 0];
+derivativesDiff = [0, 0];
+globalCom = [0, 0];
+/*
  * Some Utility Functions
  */
 function debug(e) {
@@ -34,24 +50,83 @@ function getWidth() {
 /*
  * Add vector mathematics methods to the Array prototype (based on methods found in the Sylvester Javascript Library)
  */
+//Self versions are so that new arrays are not generated
+//SelfComponents versions are so that new arrays are not passed 
+Array.prototype.zeroSelf = function() {
+    this[0] = 0;
+    this[1] = 0;
+    return this;
+}
+Array.prototype.copy = function(copy) {
+    this[0] = copy[0];
+    this[1] = copy[1];
+    return this;
+}
 Array.prototype.add = function(addarray) {
     //return [this[0] + addarray[0], this[1] + addarray[1], (this[2] || 0) + (addarray[2] || 0)];
     return [this[0] + addarray[0], this[1] + addarray[1]];
+}
+Array.prototype.addComponents = function(first, second) {
+    return [this[0] + first, this[0] + second];
+}
+Array.prototype.addSelf = function(addarray) {
+    this[0] += addarray[0];
+    this[1] += addarray[1];
+    return this;
+}
+Array.prototype.addSelfComponents = function(first, second) {
+    this[0] += first;
+    this[1] += second;
+    return this;
 }
 Array.prototype.subtract = function(subarray) {
     //return [this[0] - subarray[0], this[1] - subarray[1], (this[2] || 0) - (subarray[2] || 0)];
     return [this[0] - subarray[0], this[1] - subarray[1]];
 }
+Array.prototype.subtractComponents = function(first, second) {
+    return [this[0] - first, this[1] - second];
+}
+Array.prototype.subtractSelf = function(subarray) {
+    this[0] -= subarray[0];
+    this[1] -= subarray[1];
+    return this;
+}
+Array.prototype.subtractSelfComponents = function(first, second) {
+    this[0] -= first;
+    this[1] -= second;
+    return this;
+}
 Array.prototype.multiply = function(factor) {
     //return [this[0] * factor, this[1] * factor, (this[2] || 0) * factor];
     return [this[0] * factor, this[1] * factor];
 }
+Array.prototype.multiplySelf = function(factor) {
+    this[0] *= factor;
+    this[1] *= factor;
+    return this;
+}
 Array.prototype.multiplyEach = function(multArray) {
     return [this[0] * multArray[0], this[1] * multArray[1]];
+}
+Array.prototype.multiplyEachComponents = function(first, second) {
+    return [this[0] * first, this[1] * second];
+}
+Array.prototype.multiplyEachSelf = function(multArray) {
+    this[0] *= multArray[0];
+    this[1] *= multArray[1];
+    return this;
+}
+Array.prototype.multiplyEachSelfComponents = function(first, second) {
+    this[0] *= first;
+    this[0] *= second;
+    return this;
 }
 Array.prototype.dot = function(array2) {
     //return this[0]*array2[0] + this[1]*array2[1] + (this[2] || 0) * (array2[2] || 0);
     return this[0]*array2[0] + this[1]*array2[1];
+}
+Array.prototype.dotSelf = function() {
+    return this[0]*this[0] + this[1]*this[1];
 }
 Array.prototype.distanceFrom = function(destArray) {
     //return Math.sqrt(Math.pow(this[0] - destArray[0], 2) + Math.pow(this[1] - destArray[1], 2) + Math.pow((this[2] || 0) - (destArray[2] || 0), 2));
@@ -63,11 +138,26 @@ Array.prototype.toUnitVector = function() {
     var mag = Math.sqrt((this[0] * this[0]) + (this[1] * this[1]));
     return [this[0] / mag, this[1] / mag];
 }
+Array.prototype.toUnitVectorSelf = function() {
+    var mag = Math.sqrt((this[0] * this[0]) + (this[1] * this[1]));
+    this[0] /= mag;
+    this[1] /= mag;
+    return this;
+}
 Array.prototype.rotate = function(iangle) {
     // only used to initialize position of new bodies, see how to adapt to 3d
     var cosangle = Math.cos(iangle);
     var sinangle = Math.sin(iangle);
     return [(cosangle * this[0]) + (-sinangle * this[1]), (sinangle * this[0]) + (cosangle * this[1])];
+}
+Array.prototype.rotateSelf = function(iangle) {
+    var cosangle = Math.cos(iangle);
+    var sinangle = Math.sin(iangle);
+    var x = this[0];
+    var y = this[1];
+    this[0] = (cosangle*x) + (-sinangle*y);
+    this[1] = (sinangle*x) + (cosangle*y);
+    return this;
 }
 /*
  * Drawing Functions
@@ -192,29 +282,6 @@ function resizeWindow() {
 }
 
 function resetCanvas(oldRect, willReset) {
-    /*
-    var transition = document.getElementById('transition').getContext('2d');
-    if (willReset) {
-        if (antiFlicker || alpha < 1) {
-            transition.drawImage(paper.canvas, 0, 0);
-        }
-        paper.fillStyle = '#000';
-        paper.fillRect(-oldRect[0], -oldRect[1], oldRect[2], oldRect[3]);
-    }
-    paper.setTransform(1, 0, 0, 1, 0, 0);
-    var scaleWidth = windowWidth / rectDimensions[2];
-    var scaleHeight = windowHeight / rectDimensions[3];
-    paper.scale(scaleWidth, scaleHeight);
-    paper.translate(rectDimensions[0], rectDimensions[1]);
-    if (willReset && (antiFlicker || alpha < 1)) {
-        paper.drawImage(transition.canvas, -oldRect[0], -oldRect[1], oldRect[2], oldRect[3]);
-    }
-    if (willReset && isPaused) {
-        for (var i = bodies.length; i--;) {
-            drawBody(bodies[i].position[0], bodies[i].position[1], bodies[i].radius, bodies[i].color, paper);
-        }
-    }
-    */
     document.getElementById('viewx').innerHTML = 'X: ' + parseInt(rectDimensions[0], 10);
     document.getElementById('viewy').innerHTML = 'Y: ' + parseInt(rectDimensions[1], 10);
     document.getElementById('viewidth').innerHTML = 'Width: ' + parseInt(rectDimensions[2], 10);
@@ -263,148 +330,6 @@ var gravConstant = 8.14496e-18; // Calculated so that an Earth at 1e-5 times its
                                // has an orbital velocity such at its period is 60s (so G is in pks units) (with no trace).
                                // The "Sun" has its normal mass in kg.
 
-function symplectic(state, derivative, c, d, getEnergy, colliders1, colliders2) {
-    getEnergy = !!getEnergy;
-    var getColliders = !!colliders1;
-    var colliders = {};
-    var contact = false;
-    var totalEnergy = 0;
-    var bodiesLength = state.length;
-    for (var i = bodiesLength; i--;) {
-        if (c != 0) {
-            for (var j = i; j--;) {
-                var diff = state[i].position.subtract(state[j].position);
-                if (getColliders) {
-                    var radii = bodies[i].radius + bodies[j].radius;
-                    if (diff.dot(diff) <= (radii*radii)) {
-                        if (!colliders[i]) {
-                            colliders[i] = [];
-                        }
-                        if (!colliders[j]) {
-                            colliders[j] = [];
-                        }
-                        if (!(colliders[i].indexOf(j) > 0 || colliders[j].indexOf(i) > 0)) {
-                            if (bodies[i].mass > bodies[j].mass) {
-                                colliders[i][colliders[i].length] = j;
-                            } else {
-                                colliders[j][colliders[j].length] = i;
-                            }
-                            contact = true;
-                        }
-                    }
-                }
-                var dist = state[i].position.distanceFrom(state[j].position);
-                var mult = gravConstant / (dist * dist* dist);
-                var multj = -mult * bodies[j].mass;
-                var multi = mult * bodies[i].mass;
-
-                var momentumi = [];
-                if (!state[i].momentum) {
-                    momentumi = state[i].velocity.multiply(bodies[i].mass);
-                } else {
-                    momentumi = state[i].momentum;
-                }
-                var momentumj = [];
-                if (!state[j].momentum) {
-                    momentumj = state[j].velocity.multiply(bodies[j].mass);
-                } else {
-                    momentumj = state[j].momentum;
-                }
-                derivative[i].momentum = derivative[i].momentum.add(momentumi.subtract(diff.multiply(multi * c)));
-                derivative[j].momentum = derivative[j].momentum.add(momentumj.subtract(diff.multiply(multj * c)));
-                if (counts == 100) {
-                    debug("i: " + i);
-                    debug("j: " + j);
-                    debug(derivative[i].momentum);
-                    debug(derivative[j].momentum);
-                    debug(diff);
-                }
-
-                if (getEnergy) {
-                    totalEnergy -= (gravConstant * bodies[j].mass * bodies[i].mass) / state[i].position.distanceFrom(state[j].position);
-                }
-            }
-        } else {
-            var momentum = [];
-            if (!state[i].momentum) {
-                momentum = state[i].velocity.multiply(bodies[i].mass);
-            } else {
-                momentum = state[i].momentum;
-            }
-            derivative[i].momentum = momentum;
-        }
-    }
-
-    for (var i = bodiesLength; i--;) {
-        derivative[i].position = state[i].position.add(derivative[i].momentum.multiply(d));
-    }
-    /*
-    for (var i = bodiesLength; i--;) {
-        var momentum = [];
-        if (!state[i].momentum) {
-            momentum = state[i].velocity.multiply(bodies[i].mass);
-        } else {
-            momentum = state[i].momentum;
-        }
-        derivative[i].position = state[i].position.add(momentum.multiply(c/bodies[i].mass));
-    }
-    for (var i = bodiesLength; i--;) {
-        for (var j = i; j--;) {
-            var diff = derivative[i].position.subtract(derivative[j].position);
-            if (getColliders) {
-                diff = state[i].position.subtract(state[j].position);
-                var radii = bodies[i].radius + bodies[j].radius;
-                if (diff.dot(diff) <= (radii*radii)) {
-                    if (!colliders[i]) {
-                        colliders[i] = [];
-                    }
-                    if (!colliders[j]) {
-                        colliders[j] = [];
-                    }
-                    if (!(colliders[i].indexOf(j) > 0 || colliders[j].indexOf(i) > 0)) {
-                        if (bodies[i].mass > bodies[j].mass) {
-                            colliders[i][colliders[i].length] = j;
-                        } else {
-                            colliders[j][colliders[j].length] = i;
-                        }
-                        contact = true;
-                    }
-                }
-            }
-
-            var dist = derivative[i].position.distanceFrom(derivative[j].position);
-            var mult = gravConstant / (dist * dist * dist);
-            var multj = -mult * bodies[j].mass;
-            var multi = mult * bodies[i].mass;
-            var momentumi = [];
-            if (!state[i].momentum) {
-                momentumi = state[i].velocity.multiply(bodies[i].mass);
-            } else {
-                momentumi = state[i].momentum;
-            }
-            var momentumj = [];
-            if (!state[j].momentum) {
-                momentumj = state[j].velocity.multiply(bodies[j].mass);
-            } else {
-                momentumj = state[j].momentum;
-            }
-            derivative[i].momentum = derivative[i].momentum.add(momentumi.subtract(diff.multiply(multi * d)));
-            derivative[j].momentum = derivative[j].momentum.add(momentumj.subtract(diff.multiply(multj * d)));
-            if (getEnergy) {
-                totalEnergy -= (gravConstant * bodies[j].mass * bodies[i].mass) / state[i].position.distanceFrom(state[j].position);
-            }
-        }
-    }
-    */
-
-    if (contact) {
-	for (var first in colliders) {
-            colliders1[colliders1.length] = +first;
-            colliders2[colliders2.length] = colliders[first];
-	}
-    }
-    return totalEnergy;
-}
 
 function derivatives(state, derivative, getEnergy, colliders1, colliders2) {
     getEnergy = !!getEnergy;
@@ -415,14 +340,17 @@ function derivatives(state, derivative, getEnergy, colliders1, colliders2) {
     // takes a state array, gets the derivatives of the state and stores in derivative
     var bodiesLength = state.length;
     for (var i = bodiesLength; i--;) {
-        derivative[i].position = state[i].velocity;
+        //derivative[i].position = state[i].velocity;
+        derivative[i].position.copy(state[i].velocity);
     }
     for (var i = bodiesLength; i--;) {
         for (var j = i; j--;) {
-            var diff = state[i].position.subtract(state[j].position);
+            //var diff = state[i].position.subtract(state[j].position);
+            derivativesDiff.copy(state[i].position.subtractSelf(state[j].position));
+            state[i].position.addSelf(state[j].position);
 	    if (getColliders) {
 		var radii = bodies[i].radius + bodies[j].radius;
-		if (diff.dot(diff) <= (radii*radii)) {
+		if (derivativesDiff.dotSelf() <= (radii*radii)) {
 		    // bodies are touching
                     if (!colliders[i]) {
                         colliders[i] = [];
@@ -446,8 +374,13 @@ function derivatives(state, derivative, getEnergy, colliders1, colliders2) {
             var mult = gravConstant / (dist * dist * dist);
             var multi = -mult * bodies[j].mass;
             var multj = mult * bodies[i].mass;
-            derivative[i].velocity = derivative[i].velocity.add(diff.multiply(multi));
-            derivative[j].velocity = derivative[j].velocity.add(diff.multiply(multj));
+            //derivative[i].velocity = derivative[i].velocity.add(diff.multiply(multi));
+            derivativesDiff.multiplySelf(multi);
+            derivative[i].velocity.addSelf(derivativesDiff);
+            //derivative[j].velocity = derivative[j].velocity.add(diff.multiply(multj));
+            derivativesDiff.multiplySelf(multj/multi);
+            derivative[j].velocity.addSelf(derivativesDiff);
+            //derivativesDiff.multiply(1/multj); not used anymore
             if (getEnergy) {
                 totalEnergy -= (gravConstant * bodies[j].mass * bodies[i].mass) / dist;
             }
@@ -466,22 +399,36 @@ function calculateOrbit() {
     var bodiesLength = bodies.length;
     // RK4 derivatives and intermediate
     // This RK4 method adapted from the program Planets by Yaron Minsky (planets.homedns.org)
-    var derivative1 = [];
-    var derivative2 = [];
-    var derivative3 = [];
-    var derivative4 = [];
-    var yt = [];
-    var hh = 0.5; //rk4 half timestep
-    var h6 = 1/6;  //rk4 1/6 timestep
+    var oldLength = derivative1.length;
+    derivative1.length = bodiesLength;
+    derivative2.length = bodiesLength;
+    derivative3.length = bodiesLength;
+    derivative4.length = bodiesLength;
+    yt.length = bodiesLength;
     for (var i = bodiesLength; i--;) {
-        derivative1[i] = {position:[0,0], velocity:[0,0]};
-        derivative2[i] = {position:[0,0], velocity:[0,0]};
-        derivative3[i] = {position:[0,0], velocity:[0,0]};
-        derivative4[i] = {position:[0,0], velocity:[0,0]};
-        yt[i] = {position:[0,0], velocity:[0,0]};
+        if (i < oldLength) {
+            //elements already exist, just reset them (to avoid garbage collection)
+            derivative1[i].position.zeroSelf();
+            derivative1[i].velocity.zeroSelf();
+            derivative2[i].position.zeroSelf();
+            derivative2[i].velocity.zeroSelf();
+            derivative3[i].position.zeroSelf();
+            derivative3[i].velocity.zeroSelf();
+            derivative4[i].position.zeroSelf();
+            derivative4[i].velocity.zeroSelf();
+            yt[i].position.zeroSelf();
+            yt[i].velocity.zeroSelf();
+        } else {
+            //this should be the only place in the calculateOrbit loop function that actually creates objects/arrays
+            derivative1[i] = {position:[0,0], velocity:[0,0]};
+            derivative2[i] = {position:[0,0], velocity:[0,0]};
+            derivative3[i] = {position:[0,0], velocity:[0,0]};
+            derivative4[i] = {position:[0,0], velocity:[0,0]};
+            yt[i] = {position:[0,0], velocity:[0,0]};
+        }
     }
-    var massiveColliders = [];
-    var smallColliders = [];
+    massiveColliders.length = 0;
+    smallColliders.length = 0;
     var energy;
     if (isBounce) {
         energy = derivatives(bodies, derivative1, true, massiveColliders, smallColliders); // compute the first derivative for rk4, stored into derivative1, get the gravitational energy
@@ -489,59 +436,43 @@ function calculateOrbit() {
         energy = derivatives(bodies, derivative1, true);
     }
     for (var i = bodiesLength; i--;) {
-        yt[i].position = bodies[i].position.add(derivative1[i].position.multiply(hh));
-        yt[i].velocity = bodies[i].velocity.add(derivative1[i].velocity.multiply(hh));
+        //yt[i].position = bodies[i].position.add(derivative1[i].position.multiply(hh));
+        yt[i].position.copy(bodies[i].position.addSelf(derivative1[i].position.multiplySelf(hh)));
+        bodies[i].position.subtractSelf(derivative1[i].position);
+        derivative1[i].position.multiplySelf(1/hh);
+        //yt[i].velocity = bodies[i].velocity.add(derivative1[i].velocity.multiply(hh));
+        yt[i].velocity.copy(bodies[i].velocity.addSelf(derivative1[i].velocity.multiplySelf(hh)));
+        bodies[i].velocity.subtractSelf(derivative1[i].velocity);
+        derivative1[i].velocity.multiplySelf(1/hh)
     }
     derivatives(yt, derivative2); // compute the second derivative for rk4 using the position and velocity updated from first derivative
     for (var i = bodiesLength; i--;) {
-        yt[i].position = bodies[i].position.add(derivative2[i].position.multiply(hh));
-        yt[i].velocity = bodies[i].velocity.add(derivative2[i].velocity.multiply(hh));
+        //yt[i].position = bodies[i].position.add(derivative2[i].position.multiply(hh));
+        yt[i].position.copy(bodies[i].position.addSelf(derivative2[i].position.multiplySelf(hh)));
+        bodies[i].position.subtractSelf(derivative2[i].position);
+        derivative2[i].position.multiplySelf(1/hh)
+        //yt[i].velocity = bodies[i].velocity.add(derivative2[i].velocity.multiply(hh));
+        yt[i].velocity.copy(bodies[i].velocity.addSelf(derivative2[i].velocity.multiplySelf(hh)));
+        bodies[i].velocity.subtractSelf(derivative2[i].velocity);
+        derivative2[i].velocity.multiplySelf(1/hh)
     }
     derivatives(yt, derivative3);
     for (var i = bodiesLength; i--;) {
-        yt[i].position = bodies[i].position.add(derivative3[i].position);
-        yt[i].velocity = bodies[i].velocity.add(derivative3[i].velocity);
-        derivative3[i].position = derivative3[i].position.add(derivative2[i].position);
-        derivative3[i].velocity = derivative3[i].velocity.add(derivative2[i].velocity);
+        //yt[i].position = bodies[i].position.add(derivative3[i].position);
+        yt[i].position.copy(bodies[i].position.addSelf(derivative3[i].position));
+        bodies[i].position.subtractSelf(derivative3[i].position);
+        //yt[i].velocity = bodies[i].velocity.add(derivative3[i].velocity);
+        yt[i].velocity.copy(bodies[i].velocity.addSelf(derivative3[i].velocity));
+        bodies[i].velocity.subtractSelf(derivative3[i].velocity);
+        //derivative3[i].position = derivative3[i].position.add(derivative2[i].position);
+        //derivative3[i].position.addSelf(derivative2[i].position);
+        derivative3[i].position.addSelfComponents(derivative2[i].position[0], derivative2[i].position[1]);
+        //derivative3[i].velocity = derivative3[i].velocity.add(derivative2[i].velocity);
+        //derivative3[i].velocity.addSelf(derivative2[i].velocity;
+        derivative3[i].velocity.addSelfComponents(derivative2[i].velocity[0], derivative2[i].velocity[1]);
     }
     derivatives(yt, derivative4);
-    // Symplectic Integration
-    // This symplectic integrator based on method outlined in "Symplectic Integrators and their Application to Dynamical Astronomy"
-    // by Hiroshi Kinoshita, Haruo Yoshida, and Hiroshi Nakai (1990)
-    /*
-    var derivative1 = [];
-    var derivative2 = [];
-    var derivative3 = [];
-    var derivative4 = [];
-    for (var i = bodiesLength; i--;) {
-        derivative1[i] = {position:[0,0], momentum:[0,0]};
-        derivative2[i] = {position:[0,0], momentum:[0,0]};
-        derivative3[i] = {position:[0,0], momentum:[0,0]};
-        derivative4[i] = {position:[0,0], momentum:[0,0]};
-    }
-    var massiveColliders = [];
-    var smallColliders = [];
-    var energy;
-    var beta = Math.pow(2, 1/3);
-    var symInput = (beta + (1/beta) - 1) / 6;
-    if (isBounce) {
-        //energy = symplectic(bodies, derivative1, 1/(2*(2-beta)), 1/(2-beta), true, massiveColliders, smallColliders);
-        //energy = symplectic(bodies, derivative1, symInput + .5, (2*symInput) + 1, true, massiveColliders, smallColliders);
-        energy = symplectic(bodies, derivative1, 0, symInput + .5, true, massiveColliders, smallColliders);
-    } else {
-        //energy = symplectic(bodies, derivative1, 1/(2*(2-beta)), 1/(2-beta), true);
-        //energy = symplectic(bodies, derivative1, symInput + .5, (2*symInput) + 1, true);
-        energy = symplectic(bodies, derivative1, 0, symInput + .5, true);
-    }
-    /*
-    symplectic(derivative1, derivative2, (1-beta)/(2*(2-beta)), -beta/(2-beta));
-    symplectic(derivative2, derivative3, (1-beta)/(2*(2-beta)), 1/(2-beta));
-    */
-    /*
-    symplectic(derivative1, derivative2, (2*symInput) + 1, -symInput);
-    symplectic(derivative2, derivative3, (-4*symInput) - 1, -symInput);
-    symplectic(derivative3, derivative4, (2*symInput) + 1, symInput + .5);
-    */
+
     if (alpha >= 0.001) {
         paper.fillStyle = 'rgba(0,0,0,' + alpha + ')';
         //paper.fillRect(-rectDimensions[0], -rectDimensions[1], rectDimensions[2], rectDimensions[3]);
@@ -549,38 +480,6 @@ function calculateOrbit() {
     }
     if (massiveColliders.length > 0) {
 	// get the new momentum for the massive body, and the new mass
-        /*
-        // for absorbing
-	for (var i = massiveColliders.length; i--;) {
-	    var newMass = bodies[massiveColliders[i]].mass + bodies[smallColliders[i]].mass;
-    	    var newRadius = Math.pow((newMass) / 2.50596227828973444312e20, 1/2); // using average density of all planets of 3.1251e3 kg / m
-    	    //newRadius /= 1e5; // 1px = 1e-5 m
-            if (newRadius < 100) {
-		newRadius = 100;
-	    }
-	    var newVelocity = bodies[massiveColliders[i]].velocity.multiply(bodies[massiveColliders[i]].mass).add(bodies[smallColliders[i]].velocity.multiply(bodies[smallColliders[i]].mass)).multiply(1/newMass);
-	    bodies[massiveColliders[i]].mass = newMass;
-	    bodies[massiveColliders[i]].radius = newRadius;
-	    bodies[massiveColliders[i]].velocity = newVelocity;
-	}
-	// remove the small body and all its derivatives
-	var minimum = bodies.length;
-	var subtract = 0;
-	for (var i = smallColliders.length; i--;) {
-	    var index = smallColliders[i];
-            if (index < minimum) {
-		// the index now references bodies of one lower index
-		subtract++;
-		minimum = index;
-	    } else {
-		index -= subtract;
-	    }
-	    bodies.splice(index, 1);
-	    derivative1.splice(index, 1);
-	    derivative3.splice(index, 1);
-	    derivative4.splice(index, 1);
-	}
-        */
         // for colliding
         // adapted from http://www.gamasutra.com/view/feature/3015/pool_hall_lessons_fast_accurate_.php?print=1
         // and
@@ -589,71 +488,94 @@ function calculateOrbit() {
             var body1 = bodies[massiveColliders[i]];
             for (var j = smallColliders[i].length; j--;) {
                 var body2 = bodies[smallColliders[i][j]];
-                var diff = body1.position.subtract(body2.position);
-                var mag = Math.sqrt(diff.dot(diff));
+                //var diff = body1.position.subtract(body2.position);
+                collidingDiff.copy(body1.position.subtractSelf(body2.position));
+                body1.position.addSelf(body2.position);
+                var mag = Math.sqrt(collidingDiff.dotSelf());
                 // minimum translation distance to push bodies apart after intersecting
-                var move = diff.multiply((body1.radius+body2.radius-mag)/mag);
+                var absFactor = (body1.radius+body2.radius-mag)/mag;
+                //var move = diff.multiply((body1.radius+body2.radius-mag)/mag);
+                collidingDiff.multiplySelf(absFactor);
                 //inverse mass quantities
                 var im1 = 1 / body1.mass;
                 var im2 = 1 / body2.mass;
                 // push-pull them apart based off their mass
-                body1.position = body1.position.add(move.multiply(im1/(im1+im2)));
-                body2.position = body2.position.subtract(move.multiply(im2/(im1+im2)));
+                var firstFactor = im1/(im1+im2);
+                var secondFactor = im2/(im1+im2);
+                //body1.position = body1.position.add(move.multiply(im1/(im1+im2)));
+                collidingDiff.multiplySelf(firstFactor);
+                body1.position.addSelf(collidingDiff);
+                //body2.position = body2.position.subtract(move.multiply(im2/(im1+im2)));
+                collidingDiff.multiplySelf(secondFactor/firstFactor);
+                body2.position.addSelf(collidingDiff);
+                //diff.multiplySelf(1/(secondFactor*absFactor)); //don't need to do this, will unit vector self
                 // impact speed
-                var n = diff.toUnitVector();
-                var vn = body1.velocity.dot(n) - body2.velocity.dot(n);
+                //var n = diff.toUnitVector();
+                collidingDiff.toUnitVectorSelf();
+                var vn = body1.velocity.dot(collidingDiff) - body2.velocity.dot(collidingDiff);
                 if (vn <= 0) {
                     // collision impulse
-                    var impulse = n.multiply((-2 * vn) / (im1 + im2));
+                    //var impulse = diff.multiply((-2 * vn) / (im1 + im2));
+                    collidingDiff.multiplySelf((-2 * vn) / (im1 + im2));
                     // change in momentum
-                    body1.velocity = body1.velocity.add(impulse.multiply(im1));
-                    body2.velocity = body2.velocity.subtract(impulse.multiply(im2));
+                    //body1.velocity = body1.velocity.add(impulse.multiply(im1));
+                    body1.velocity.addSelf(collidingDiff.multiplySelf(im1));
+                    //body2.velocity = body2.velocity.subtract(impulse.multiply(im2));
+                    body2.velocity.addSelf(collidingDiff.multiplySelf(im2/im1));
                 }
             }
         }
     }
     bodiesLength = bodies.length;
     var scale = rectDimensions[2] / windowWidth;
-    var com = [0, 0];
+    //var com = [0, 0];
+    globalCom.zeroSelf();
     var totalMass = 0;
+    globalFunc();
     angle += angularVelocity;
     angle %= 2*Math.PI;
-    var global = globalOrigin.add([rectDimensions[0], rectDimensions[1]]);
+    var locangle = angle;
+    //var global = globalOrigin.add([rectDimensions[0], rectDimensions[1]]);
+    globalOrigin.addSelf(rectDimensions);
+    //since derivatives are no longer used after this, can use the self versions of vector functions
     for (var i = bodiesLength; i--;) {
         var firstPosition = bodies[i].position;
-        bodies[i].position = bodies[i].position.add((derivative1[i].position.add(derivative4[i].position).add(derivative3[i].position.multiply(2))).multiply(h6));
-        bodies[i].velocity = bodies[i].velocity.add((derivative1[i].velocity.add(derivative4[i].velocity).add(derivative3[i].velocity.multiply(2))).multiply(h6));
-        /*
-        bodies[i].position = derivative3[i].position.add(derivative3[i].momentum.multiply(1/(2*bodies[i].mass*(2-beta))));
-        bodies[i].velocity = derivative3[i].momentum.multiply(1/bodies[i].mass);
-        */
-        /*
-        bodies[i].position = derivative1[i].position;
-        bodies[i].velocity = derivative1[i].momentum.multiply(1/bodies[i].mass);
-        */
-        /*
-        bodies[i].position = derivative4[i].position;
-        bodies[i].velocity = derivative4[i].momentum.multiply(1/bodies[i].mass);
-        */
-        energy += .5 * bodies[i].mass * bodies[i].velocity.dot(bodies[i].velocity);
+        //bodies[i].position = bodies[i].position.add((derivative1[i].position.add(derivative4[i].position).add(derivative3[i].position.multiply(2))).multiply(h6));
+        bodies[i].position.addSelf((derivative1[i].position.addSelf(derivative4[i].position).addSelf(derivative3[i].position.multiplySelf(2))).multiplySelf(h6));
+        //bodies[i].velocity = bodies[i].velocity.add((derivative1[i].velocity.add(derivative4[i].velocity).add(derivative3[i].velocity.multiply(2))).multiply(h6));
+        bodies[i].velocity.addSelf((derivative1[i].velocity.addSelf(derivative4[i].velocity).addSelf(derivative3[i].velocity.multiplySelf(2))).multiplySelf(h6));
+        energy += .5 * bodies[i].mass * bodies[i].velocity.dotSelf();
         var radius = bodies[i].radius / scale;
         if (radius < 2) {
             radius = 2;
         }
-        var position = bodies[i].position.add([rectDimensions[0], rectDimensions[1]]);
+        //var position = bodies[i].position.add([rectDimensions[0], rectDimensions[1]]);
+        bodies[i].position.addSelf(rectDimensions); //1
 	if (isRotating) {
-	    position = position.subtract(global).rotate(angle).add(global);
+	    //position = position.subtract(global).rotate(angle).add(global);
+            bodies[i].position.subtractSelf(globalOrigin).rotateSelf(locangle).addSelf(globalOrigin); //1a
 	}
-	position = position.multiply(1/scale);
-        com = com.add(position.multiply(bodies[i].mass));
+	//position = position.multiply(1/scale);
+        bodies[i].position.multiplySelf(1/scale); //2
+        //com = com.add(position.multiply(bodies[i].mass));
+        globalCom.addSelf(bodies[i].position.multiplySelf(bodies[i].mass)); //3
+        bodies[i].position.multiplySelf(1/bodies[i].mass); //3
         totalMass += bodies[i].mass;
-        drawBody(position[0], position[1], radius, bodies[i].color, paper);
+        drawBody(bodies[i].position[0], bodies[i].position[1], radius, bodies[i].color, paper);
+        //reverse previous actions
+        bodies[i].position.multiplySelf(scale); //2
+        if (isRotating) {
+            bodies[i].position.subtractSelf(globalOrigin).rotateSelf(-locangle).addSelf(globalOrigin); //1a
+        }
+        bodies[i].position.subtractSelf(rectDimensions); //1
         if (alpha < 1) {
             drawLine(bodies[i].position[0], bodies[i].position[1], firstPosition[0], firstPosition[1], bodies[i].radius, bodies[i].color, paper);
         }
     }
-    com = com.multiply(1/totalMass);
-    drawBody(com[0], com[1], 3, '#fff', paper);
+    globalOrigin.subtractSelf(rectDimensions);
+    //com = com.multiply(1/totalMass);
+    globalCom.multiplySelf(1/totalMass);
+    drawBody(globalCom[0], globalCom[1], 3, '#fff', paper);
     paper.strokeStyle = '#f77';
     paper.stroke();
     energy = '' + energy;
@@ -689,10 +611,10 @@ function addBody(x, y, newMass, randomOrientation) {
         var mostMassiveBody = bodies[bodies.length - 1];
         var massiveIndex = 0;
         var delp = mostMassiveBody.position.subtract(newPosition);
-        var massDistance = mostMassiveBody.mass / delp.dot(delp);
+        var massDistance = mostMassiveBody.mass / delp.dotSelf();
         for (var i = bodiesLength - 1; i--;) {
             var delp = bodies[i].position.subtract(newPosition);
-            var newMassDistance = bodies[i].mass / delp.dot(delp);
+            var newMassDistance = bodies[i].mass / delp.dotSelf();
             if (newMassDistance > massDistance) {
                 mostMassiveBody = bodies[i];
                 massiveIndex = i;
@@ -748,6 +670,8 @@ function loadBodies(id) {
     angularVelocity = 0;
     //globalOrigin = [700000,300000];
     globalOrigin = [0, 0];
+    counts = 0;
+    globalFunc = function() {};
     switch (id) {
         case 0:
             // Solar System
@@ -925,7 +849,7 @@ function loadBodies(id) {
             ];
             break;
         case 21:
-            // two-body system
+            // two-body system Sun-Jupiter
             angle = 0;
             angularVelocity = 2 * Math.PI / 139.56194206293700933434;
             globalOrigin = [500000,300000];
@@ -1365,6 +1289,47 @@ function loadBodies(id) {
             ];
             break;
         case 9:
+            //kepler 16 system
+            angle = 0;
+            console.log("setting angular velocity");
+            angularVelocity = 2 * Math.PI / -335.20038425056584893598;
+            globalFunc = function() {
+                var v = bodies[0].velocity;
+                var p = bodies[0].position.subtract(globalOrigin);
+                var velocity = Math.sqrt(v.dotSelf());
+                var dist = Math.sqrt(p.dotSelf())
+                angularVelocity = -velocity / dist;
+            };
+            globalOrigin = [500000,300000];
+            //NOTE: sqrt(GM[other]/2R) will get you a circular orbit around the common COM, but the COM will have some linear motion. Will have to compensate by
+            //      subtracting the velocity of the COM from the two bodies
+            //      The third body shouldn't need adjusting since it's orbital velocity was calculated in reference to the COM, which should then be stationary.
+             bodies = [
+                {velocity: [0, -1427.52795303998368297237],
+                position: [423913.45703234486238017826, 300000],
+                radius: 6000,
+                mass: 1.37174433e30,
+                color: '#ff0'},
+
+                {velocity: [0, 4862.24823832120908357513],
+                position: [759465.45703234486238017826, 300000],
+                radius: 2000,
+                mass: 4.02255025e29,
+                color: '#ff0'},
+
+                {velocity: [0, 3701.88107120123905059218],
+                position: [1554380, 300000],
+                radius: 500,
+                mass: 6.3199999999999368e26,
+                color: '#fff'}
+            ];
+        break;
+
+
+
+
+
+        case 12:
         default:
             bodies = [];
             break;
