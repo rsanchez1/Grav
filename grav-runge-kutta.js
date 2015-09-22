@@ -262,6 +262,11 @@ function cancelEvent(e)
 var gravConstant = 8.14496e-18; // Calculated so that an Earth at 1e-5 times its actual distance (with 1px = 1m) 
                                // has an orbital velocity such at its period is 60s (so G is in pks units) (with no trace).
                                // The "Sun" has its normal mass in kg.
+                               // 60s should be in actual time, but in calculations T is number of iterations
+                               // ie. if T were calculated for Earth using existing parameters, T is about 2856
+                               // because there are 2856 iterations in 60 seconds, this would equal about
+                               // 21ms/iteration, which is about 33% higher than the theoretical iteration limit of 
+                               // 14ms/iteration in the browser
 
 function symplectic(state, derivative, c, d, getEnergy, colliders1, colliders2) {
     getEnergy = !!getEnergy;
