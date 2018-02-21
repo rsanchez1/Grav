@@ -106,11 +106,15 @@ function addBodyClick(ev) {
     if (!!ev.shiftKey) {
         randomOrientation = true;
     }
+    var zeroVelocity = false;
+    if (!!ev.ctrlKey) {
+        zeroVelocity = true;
+    }
     var pos = [(x * (rectDimensions[2] / windowWidth)) - rectDimensions[0], (y * (rectDimensions[3] / windowHeight)) - rectDimensions[1]];
     var global = globalOrigin.add([rectDimensions[0], rectDimensions[1]]);
     var thisAngle = isRotating ? angle : 0;
     pos = pos.subtract(globalOrigin).rotate(-thisAngle).add(globalOrigin);
-    addBody(pos[0], pos[1], +document.getElementById('newmass').value, randomOrientation);
+    addBody(pos[0], pos[1], +document.getElementById('newmass').value, randomOrientation, zeroVelocity);
 }
 
 function handleArrowEvents(ev) {
@@ -678,7 +682,7 @@ function calculateOrbit() {
     }
 }
 
-function addBody(x, y, newMass, randomOrientation) {
+function addBody(x, y, newMass, randomOrientation, zeroVelocity) {
     var newRadius = Math.pow((newMass) / 2.50596227828973444312e19, 1/2); // using average density of all planets of 3.1251e3 kg / m
     //newRadius /= 1e5; // 1px = 1e-5 m
     /*
@@ -728,6 +732,9 @@ function addBody(x, y, newMass, randomOrientation) {
     }
     if (typeof(randomOrientation) != 'undefined' && randomOrientation == true) {
         velocity = velocity.rotate(2*Math.PI*Math.random());
+    }
+    if (typeof(zeroVelocity) != 'undefined' && zeroVelocity == true) {
+        velocity = [0,0];
     }
     var color = 'rgb(' + (127 + randInt(127)) + ',' + (127 + randInt(127)) + ',' + (127 + randInt(127)) + ')';
     bodies[bodies.length] = {mass: newMass, velocity: velocity, radius: newRadius, position: newPosition, color:color};
