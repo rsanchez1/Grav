@@ -1283,8 +1283,7 @@ function loadBodies(id) {
                  radius:27000,
                  mass:3e28,
                  color: '#f00'},
-                 /*
-
+		    
                  {velocity: [0, 0],
                  position: [154000, 300000],
                  radius:27000,
@@ -1297,7 +1296,6 @@ function loadBodies(id) {
                  radius:27000,
                  mass:3e28,
                  color: '#f00'},
-                 */
 
                  {velocity: [0, 0],
                  position: [1000000, 300000], // try at 11
