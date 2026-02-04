@@ -13,6 +13,8 @@
         <br />
         <span id='energy' style='font-size:12px'></span>
         <br />
+        <span id='energyDelta' style='font-size:12px'></span>
+        <br />
         <h3>View Box</h3>
         <span id='viewx'>X: 0</span>
         <br />
@@ -59,6 +61,29 @@
         <p><u>B</u>ounce: <span id='bounce'>On</span></p>
 	<p><u>R</u>otate: <span id='rotating'>Off</span></p>
         <p>Show/Hide: Q</p>
+        <h3>Integrator</h3>
+        <select id='integrator' style='width: 120px; background-color:#000; color:#fff; border:0 none;'>
+            <option value='symplectic'>Symplectic</option>
+            <option value='rk4'>RK4</option>
+        </select>
+        <h3>Time Step</h3>
+        <input id='dt' type='text' value='1.0' style='width:100px; background-color:transparent; color:#fff; border:1px solid #fff;'/>
+        <br />
+        <input id='dtRange' type='range' min='0.05' max='2.0' step='0.05' value='1.0' style='width:120px;'/>
+        <h3>Timing</h3>
+        <span id='fps' style='font-size:12px'>FPS: --</span>
+        <br />
+        <span id='frameMs' style='font-size:12px'>Frame: -- ms</span>
+        <br />
+        <span id='simMs' style='font-size:12px'>Sim: -- ms</span>
+        <br />
+        <span id='gravMs' style='font-size:12px'>Gravity: -- ms</span>
+        <br />
+        <span id='renderMs' style='font-size:12px'>Render: -- ms</span>
+        <br />
+        <span id='integratorLabel' style='font-size:12px'>Integrator: --</span>
+        <br />
+        <span id='dtLabel' style='font-size:12px'>dt: --</span>
     </div>
     <canvas id='canvas' width='1300' height='600' style='border:1px solid #050505;position:absolute;top:0;left:0;'>
     </canvas>
