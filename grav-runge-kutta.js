@@ -132,11 +132,6 @@ function pageEvents(ev) {
     if (ek == 113) {
         document.getElementById('instructions').style.display = (document.getElementById('instructions').style.display == 'none' ? 'block' : 'none');
     }
-    // toggle flicker
-    if (ek == 102) {
-        antiFlicker = !antiFlicker;
-        document.getElementById('flicker').innerHTML = (antiFlicker && 'Off') || 'On';
-    }
     // toggle bounce
     if (ek == 98) {
         isBounce = !isBounce;
@@ -280,7 +275,6 @@ var initialEnergy = null;
 var lastEnergy = 0;
 var isBounce = false;
 var isPaused = false;
-var antiFlicker = false;
 var isRotating = false;
 var alpha = 1;
 var counts = 0;
@@ -644,6 +638,20 @@ function calculateOrbit(timestamp) {
     eMant = eMant.slice(0, 15);
     document.getElementById('energy').innerHTML = 'E: ' + eMant + 'e' + eExp;
 
+    var kStr = '' + kinetic;
+    var kParts = kStr.split('e');
+    var kMant = kParts[0];
+    var kExp = kParts[1] || '+0';
+    kMant = kMant.slice(0, 15);
+    document.getElementById('energyK').innerHTML = 'K: ' + kMant + 'e' + kExp;
+
+    var uStr = '' + potential;
+    var uParts = uStr.split('e');
+    var uMant = uParts[0];
+    var uExp = uParts[1] || '+0';
+    uMant = uMant.slice(0, 15);
+    document.getElementById('energyU').innerHTML = 'U: ' + uMant + 'e' + uExp;
+
     var dStr = '' + delta;
     var dParts = dStr.split('e');
     var dMant = dParts[0];
@@ -663,6 +671,7 @@ function calculateOrbit(timestamp) {
         document.getElementById('renderMs').innerHTML = 'Render: ' + renderMs.toFixed(2) + ' ms';
         document.getElementById('integratorLabel').innerHTML = 'Integrator: ' + integrator;
         document.getElementById('dtLabel').innerHTML = 'dt: ' + dt;
+        document.getElementById('softeningLabel').innerHTML = 'softening: ' + softening;
     }
 
     counts++;
@@ -952,7 +961,6 @@ function loadBodies(id) {
 window.onload = function() {
     isBounce = true;
     isPaused = false;
-    antiFlicker = false;
     isRotating = false;
     bodyCountDisplay = 0;
     alpha = 1;
@@ -1022,6 +1030,44 @@ window.onload = function() {
             }
         };
     }
+    var softeningInput = document.getElementById('softening');
+    if (softeningInput) {
+        softeningInput.value = '' + softening;
+        softeningInput.onchange = function(ev) {
+            var next = parseFloat(ev.target.value);
+            if (!isNaN(next) && isFinite(next) && next >= 0) {
+                softening = next;
+                softening2 = softening * softening;
+                ev.target.value = '' + softening;
+                var label = document.getElementById('softeningLabel');
+                if (label) {
+                    label.innerHTML = 'softening: ' + softening;
+                }
+                var range = document.getElementById('softeningRange');
+                if (range) {
+                    range.value = '' + softening;
+                }
+            }
+        };
+    }
+    var softeningRange = document.getElementById('softeningRange');
+    if (softeningRange) {
+        softeningRange.value = '' + softening;
+        softeningRange.oninput = function(ev) {
+            var next = parseFloat(ev.target.value);
+            if (!isNaN(next) && isFinite(next) && next >= 0) {
+                softening = next;
+                softening2 = softening * softening;
+                var label = document.getElementById('softeningLabel');
+                if (label) {
+                    label.innerHTML = 'softening: ' + softening;
+                }
+                if (softeningInput) {
+                    softeningInput.value = '' + softening;
+                }
+            }
+        };
+    }
     document.onkeypress = pageEvents;
     document.onkeydown = handleArrowEvents;
     if (canvas.addEventListener) {
@@ -1052,6 +1098,10 @@ window.onload = function() {
     var dtLabel = document.getElementById('dtLabel');
     if (dtLabel) {
         dtLabel.innerHTML = 'dt: ' + dt;
+    }
+    var softLabel = document.getElementById('softeningLabel');
+    if (softLabel) {
+        softLabel.innerHTML = 'softening: ' + softening;
     }
     scheduleNextFrame();
 };
