@@ -508,6 +508,8 @@ function calculateOrbit(timestamp) {
     }
     var stepDt = dt / stepCount;
     for (var s = 0; s < stepCount; s++) {
+        // Resolve collisions before integration to reduce deep overlaps
+        resolveCollisions();
         if (integrator === 'symplectic') {
             // Velocity Verlet (symplectic)
             computeAccelerations(posX, posY, k1vx, k1vy);
@@ -557,7 +559,6 @@ function calculateOrbit(timestamp) {
                 velY[i] += (k1vy[i] + (2 * k2vy[i]) + (2 * k3vy[i]) + k4vy[i]) * h6;
             }
         }
-        resolveCollisions();
     }
     if (nowFunc) {
         gravEnd = nowFunc();
