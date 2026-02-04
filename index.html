@@ -82,6 +82,11 @@
         <input id='substeps' type='text' value='1' style='width:100px; background-color:transparent; color:#fff; border:1px solid #fff;'/>
         <br />
         <input id='substepsRange' type='range' min='1' max='8' step='1' value='1' style='width:120px;'/>
+        <h3>Collision Timing</h3>
+        <select id='collisionTiming' style='width: 120px; background-color:#000; color:#fff; border:0 none;'>
+            <option value='pre'>Pre-step</option>
+            <option value='post'>Post-step</option>
+        </select>
         <h3>Timing</h3>
         <span id='fps' style='font-size:12px'>FPS: --</span>
         <br />
@@ -100,6 +105,8 @@
         <span id='softeningLabel' style='font-size:12px'>softening: --</span>
         <br />
         <span id='substepsLabel' style='font-size:12px'>substeps: --</span>
+        <br />
+        <span id='collisionTimingLabel' style='font-size:12px'>collision: --</span>
     </div>
     <canvas id='canvas' width='1300' height='600' style='border:1px solid #050505;position:absolute;top:0;left:0;'>
     </canvas>

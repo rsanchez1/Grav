@@ -227,6 +227,7 @@ var dt = 1.0;
 var softening = 1e3;
 var softening2 = softening * softening;
 var substeps = 1;
+var collisionTiming = 'pre'; // 'pre' or 'post'
 var integrator = 'symplectic'; // 'symplectic' or 'rk4'
 var fps = 0;
 var frameMs = 0;
@@ -508,8 +509,9 @@ function calculateOrbit(timestamp) {
     }
     var stepDt = dt / stepCount;
     for (var s = 0; s < stepCount; s++) {
-        // Resolve collisions before integration to reduce deep overlaps
-        resolveCollisions();
+        if (collisionTiming === 'pre') {
+            resolveCollisions();
+        }
         if (integrator === 'symplectic') {
             // Velocity Verlet (symplectic)
             computeAccelerations(posX, posY, k1vx, k1vy);
@@ -558,6 +560,9 @@ function calculateOrbit(timestamp) {
                 velX[i] += (k1vx[i] + (2 * k2vx[i]) + (2 * k3vx[i]) + k4vx[i]) * h6;
                 velY[i] += (k1vy[i] + (2 * k2vy[i]) + (2 * k3vy[i]) + k4vy[i]) * h6;
             }
+        }
+        if (collisionTiming === 'post') {
+            resolveCollisions();
         }
     }
     if (nowFunc) {
@@ -675,6 +680,7 @@ function calculateOrbit(timestamp) {
         document.getElementById('dtLabel').innerHTML = 'dt: ' + dt;
         document.getElementById('softeningLabel').innerHTML = 'softening: ' + softening;
         document.getElementById('substepsLabel').innerHTML = 'substeps: ' + substeps;
+        document.getElementById('collisionTimingLabel').innerHTML = 'collision: ' + collisionTiming;
     }
 
     counts++;
@@ -1133,6 +1139,17 @@ window.onload = function() {
             }
         };
     }
+    var collisionTimingSelect = document.getElementById('collisionTiming');
+    if (collisionTimingSelect) {
+        collisionTimingSelect.value = collisionTiming;
+        collisionTimingSelect.onchange = function(ev) {
+            collisionTiming = ev.target.value;
+            var label = document.getElementById('collisionTimingLabel');
+            if (label) {
+                label.innerHTML = 'collision: ' + collisionTiming;
+            }
+        };
+    }
     document.onkeypress = pageEvents;
     document.onkeydown = handleArrowEvents;
     if (canvas.addEventListener) {
@@ -1171,6 +1188,10 @@ window.onload = function() {
     var subLabel = document.getElementById('substepsLabel');
     if (subLabel) {
         subLabel.innerHTML = 'substeps: ' + substeps;
+    }
+    var collLabel = document.getElementById('collisionTimingLabel');
+    if (collLabel) {
+        collLabel.innerHTML = 'collision: ' + collisionTiming;
     }
     scheduleNextFrame();
 };
