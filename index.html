@@ -78,6 +78,10 @@
         <input id='softening' type='text' value='1000' style='width:100px; background-color:transparent; color:#fff; border:1px solid #fff;'/>
         <br />
         <input id='softeningRange' type='range' min='0' max='10000' step='50' value='1000' style='width:120px;'/>
+        <h3>Substeps</h3>
+        <input id='substeps' type='text' value='1' style='width:100px; background-color:transparent; color:#fff; border:1px solid #fff;'/>
+        <br />
+        <input id='substepsRange' type='range' min='1' max='8' step='1' value='1' style='width:120px;'/>
         <h3>Timing</h3>
         <span id='fps' style='font-size:12px'>FPS: --</span>
         <br />
@@ -94,6 +98,8 @@
         <span id='dtLabel' style='font-size:12px'>dt: --</span>
         <br />
         <span id='softeningLabel' style='font-size:12px'>softening: --</span>
+        <br />
+        <span id='substepsLabel' style='font-size:12px'>substeps: --</span>
     </div>
     <canvas id='canvas' width='1300' height='600' style='border:1px solid #050505;position:absolute;top:0;left:0;'>
     </canvas>

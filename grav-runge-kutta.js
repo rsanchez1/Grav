@@ -226,6 +226,7 @@ var gravConstant = 8.14496e-18; // Calculated so that an Earth at 1e-5 times its
 var dt = 1.0;
 var softening = 1e3;
 var softening2 = softening * softening;
+var substeps = 1;
 var integrator = 'symplectic'; // 'symplectic' or 'rk4'
 var fps = 0;
 var frameMs = 0;
@@ -498,69 +499,69 @@ function calculateOrbit(timestamp) {
         prevPosY[i] = posY[i];
     }
 
-    if (integrator === 'symplectic') {
-        if (nowFunc) {
-            gravStart = nowFunc();
-        }
-        // Velocity Verlet (symplectic)
-        computeAccelerations(posX, posY, k1vx, k1vy);
-        var halfDt2 = 0.5 * dt * dt;
-        for (var i = 0; i < bodyCount; i++) {
-            posX[i] += (velX[i] * dt) + (k1vx[i] * halfDt2);
-            posY[i] += (velY[i] * dt) + (k1vy[i] * halfDt2);
-        }
-        computeAccelerations(posX, posY, k2vx, k2vy);
-        var halfDt = 0.5 * dt;
-        for (var i = 0; i < bodyCount; i++) {
-            velX[i] += (k1vx[i] + k2vx[i]) * halfDt;
-            velY[i] += (k1vy[i] + k2vy[i]) * halfDt;
-        }
-        if (nowFunc) {
-            gravEnd = nowFunc();
-        }
-    } else {
-        if (nowFunc) {
-            gravStart = nowFunc();
-        }
-        // RK4 derivatives and intermediate
-        var hh = 0.5 * dt; // rk4 half timestep
-        var h6 = (1 / 6) * dt; // rk4 1/6 timestep
-
-        computeDerivatives(posX, posY, velX, velY, k1px, k1py, k1vx, k1vy);
-        for (var i = 0; i < bodyCount; i++) {
-            tmpPosX[i] = posX[i] + (k1px[i] * hh);
-            tmpPosY[i] = posY[i] + (k1py[i] * hh);
-            tmpVelX[i] = velX[i] + (k1vx[i] * hh);
-            tmpVelY[i] = velY[i] + (k1vy[i] * hh);
-        }
-        computeDerivatives(tmpPosX, tmpPosY, tmpVelX, tmpVelY, k2px, k2py, k2vx, k2vy);
-        for (var i = 0; i < bodyCount; i++) {
-            tmpPosX[i] = posX[i] + (k2px[i] * hh);
-            tmpPosY[i] = posY[i] + (k2py[i] * hh);
-            tmpVelX[i] = velX[i] + (k2vx[i] * hh);
-            tmpVelY[i] = velY[i] + (k2vy[i] * hh);
-        }
-        computeDerivatives(tmpPosX, tmpPosY, tmpVelX, tmpVelY, k3px, k3py, k3vx, k3vy);
-        for (var i = 0; i < bodyCount; i++) {
-            tmpPosX[i] = posX[i] + (k3px[i] * dt);
-            tmpPosY[i] = posY[i] + (k3py[i] * dt);
-            tmpVelX[i] = velX[i] + (k3vx[i] * dt);
-            tmpVelY[i] = velY[i] + (k3vy[i] * dt);
-        }
-        computeDerivatives(tmpPosX, tmpPosY, tmpVelX, tmpVelY, k4px, k4py, k4vx, k4vy);
-
-        for (var i = 0; i < bodyCount; i++) {
-            posX[i] += (k1px[i] + (2 * k2px[i]) + (2 * k3px[i]) + k4px[i]) * h6;
-            posY[i] += (k1py[i] + (2 * k2py[i]) + (2 * k3py[i]) + k4py[i]) * h6;
-            velX[i] += (k1vx[i] + (2 * k2vx[i]) + (2 * k3vx[i]) + k4vx[i]) * h6;
-            velY[i] += (k1vy[i] + (2 * k2vy[i]) + (2 * k3vy[i]) + k4vy[i]) * h6;
-        }
-        if (nowFunc) {
-            gravEnd = nowFunc();
-        }
+    if (nowFunc) {
+        gravStart = nowFunc();
     }
+    var stepCount = substeps;
+    if (!stepCount || stepCount < 1) {
+        stepCount = 1;
+    }
+    var stepDt = dt / stepCount;
+    for (var s = 0; s < stepCount; s++) {
+        if (integrator === 'symplectic') {
+            // Velocity Verlet (symplectic)
+            computeAccelerations(posX, posY, k1vx, k1vy);
+            var halfDt2 = 0.5 * stepDt * stepDt;
+            for (var i = 0; i < bodyCount; i++) {
+                posX[i] += (velX[i] * stepDt) + (k1vx[i] * halfDt2);
+                posY[i] += (velY[i] * stepDt) + (k1vy[i] * halfDt2);
+            }
+            computeAccelerations(posX, posY, k2vx, k2vy);
+            var halfDt = 0.5 * stepDt;
+            for (var i = 0; i < bodyCount; i++) {
+                velX[i] += (k1vx[i] + k2vx[i]) * halfDt;
+                velY[i] += (k1vy[i] + k2vy[i]) * halfDt;
+            }
+        } else {
+            // RK4 derivatives and intermediate
+            var hh = 0.5 * stepDt; // rk4 half timestep
+            var h6 = (1 / 6) * stepDt; // rk4 1/6 timestep
 
-    resolveCollisions();
+            computeDerivatives(posX, posY, velX, velY, k1px, k1py, k1vx, k1vy);
+            for (var i = 0; i < bodyCount; i++) {
+                tmpPosX[i] = posX[i] + (k1px[i] * hh);
+                tmpPosY[i] = posY[i] + (k1py[i] * hh);
+                tmpVelX[i] = velX[i] + (k1vx[i] * hh);
+                tmpVelY[i] = velY[i] + (k1vy[i] * hh);
+            }
+            computeDerivatives(tmpPosX, tmpPosY, tmpVelX, tmpVelY, k2px, k2py, k2vx, k2vy);
+            for (var i = 0; i < bodyCount; i++) {
+                tmpPosX[i] = posX[i] + (k2px[i] * hh);
+                tmpPosY[i] = posY[i] + (k2py[i] * hh);
+                tmpVelX[i] = velX[i] + (k2vx[i] * hh);
+                tmpVelY[i] = velY[i] + (k2vy[i] * hh);
+            }
+            computeDerivatives(tmpPosX, tmpPosY, tmpVelX, tmpVelY, k3px, k3py, k3vx, k3vy);
+            for (var i = 0; i < bodyCount; i++) {
+                tmpPosX[i] = posX[i] + (k3px[i] * stepDt);
+                tmpPosY[i] = posY[i] + (k3py[i] * stepDt);
+                tmpVelX[i] = velX[i] + (k3vx[i] * stepDt);
+                tmpVelY[i] = velY[i] + (k3vy[i] * stepDt);
+            }
+            computeDerivatives(tmpPosX, tmpPosY, tmpVelX, tmpVelY, k4px, k4py, k4vx, k4vy);
+
+            for (var i = 0; i < bodyCount; i++) {
+                posX[i] += (k1px[i] + (2 * k2px[i]) + (2 * k3px[i]) + k4px[i]) * h6;
+                posY[i] += (k1py[i] + (2 * k2py[i]) + (2 * k3py[i]) + k4py[i]) * h6;
+                velX[i] += (k1vx[i] + (2 * k2vx[i]) + (2 * k3vx[i]) + k4vx[i]) * h6;
+                velY[i] += (k1vy[i] + (2 * k2vy[i]) + (2 * k3vy[i]) + k4vy[i]) * h6;
+            }
+        }
+        resolveCollisions();
+    }
+    if (nowFunc) {
+        gravEnd = nowFunc();
+    }
 
     if (nowFunc) {
         renderStart = nowFunc();
@@ -672,6 +673,7 @@ function calculateOrbit(timestamp) {
         document.getElementById('integratorLabel').innerHTML = 'Integrator: ' + integrator;
         document.getElementById('dtLabel').innerHTML = 'dt: ' + dt;
         document.getElementById('softeningLabel').innerHTML = 'softening: ' + softening;
+        document.getElementById('substepsLabel').innerHTML = 'substeps: ' + substeps;
     }
 
     counts++;
@@ -1094,6 +1096,42 @@ window.onload = function() {
             }
         };
     }
+    var substepsInput = document.getElementById('substeps');
+    if (substepsInput) {
+        substepsInput.value = '' + substeps;
+        substepsInput.onchange = function(ev) {
+            var next = parseInt(ev.target.value, 10);
+            if (!isNaN(next) && isFinite(next) && next >= 1) {
+                substeps = next;
+                ev.target.value = '' + substeps;
+                var label = document.getElementById('substepsLabel');
+                if (label) {
+                    label.innerHTML = 'substeps: ' + substeps;
+                }
+                var range = document.getElementById('substepsRange');
+                if (range) {
+                    range.value = '' + substeps;
+                }
+            }
+        };
+    }
+    var substepsRange = document.getElementById('substepsRange');
+    if (substepsRange) {
+        substepsRange.value = '' + substeps;
+        substepsRange.oninput = function(ev) {
+            var next = parseInt(ev.target.value, 10);
+            if (!isNaN(next) && isFinite(next) && next >= 1) {
+                substeps = next;
+                var label = document.getElementById('substepsLabel');
+                if (label) {
+                    label.innerHTML = 'substeps: ' + substeps;
+                }
+                if (substepsInput) {
+                    substepsInput.value = '' + substeps;
+                }
+            }
+        };
+    }
     document.onkeypress = pageEvents;
     document.onkeydown = handleArrowEvents;
     if (canvas.addEventListener) {
@@ -1128,6 +1166,10 @@ window.onload = function() {
     var softLabel = document.getElementById('softeningLabel');
     if (softLabel) {
         softLabel.innerHTML = 'softening: ' + softening;
+    }
+    var subLabel = document.getElementById('substepsLabel');
+    if (subLabel) {
+        subLabel.innerHTML = 'substeps: ' + substeps;
     }
     scheduleNextFrame();
 };
